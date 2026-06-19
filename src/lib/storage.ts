@@ -1,6 +1,7 @@
 import type { DeviceEdge, DeviceNode, NetMapDocument } from '../types';
 
 const STORAGE_KEY = 'netmap.document.v1';
+const SHARE_CODE_KEY = 'netmap.sharecode.v1';
 
 export function loadDocument(): NetMapDocument | null {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -30,15 +31,26 @@ export function clearDocument(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function serializeForExport(nodes: DeviceNode[], edges: DeviceEdge[]): string {
-  const doc: NetMapDocument = {
+export function buildDocument(nodes: DeviceNode[], edges: DeviceEdge[]): NetMapDocument {
+  return {
     version: 1,
     nodes,
     edges,
     createdAt: loadDocument()?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  return JSON.stringify(doc, null, 2);
+}
+
+export function serializeForExport(nodes: DeviceNode[], edges: DeviceEdge[]): string {
+  return JSON.stringify(buildDocument(nodes, edges), null, 2);
+}
+
+export function loadShareCode(): string | null {
+  return localStorage.getItem(SHARE_CODE_KEY);
+}
+
+export function saveShareCode(code: string): void {
+  localStorage.setItem(SHARE_CODE_KEY, code);
 }
 
 export function parseImportedJson(raw: string): NetMapDocument | null {

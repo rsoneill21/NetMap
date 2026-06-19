@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { ClipboardPaste, LayoutGrid, Image, Download, Upload, Trash2, RefreshCw } from 'lucide-react';
+import { ClipboardPaste, LayoutGrid, Image, Download, Upload, Trash2, RefreshCw, Share2 } from 'lucide-react';
 
 interface ToolbarProps {
   onOpenImport: () => void;
+  onOpenShare: () => void;
   onTidy: () => void;
   onExportPng: () => void;
   onExportSvg: () => void;
@@ -15,6 +16,7 @@ interface ToolbarProps {
 
 export function Toolbar({
   onOpenImport,
+  onOpenShare,
   onTidy,
   onExportPng,
   onExportSvg,
@@ -57,6 +59,9 @@ export function Toolbar({
       <div className="toolbar-brand">NetMap</div>
       <button type="button" className="toolbar-btn" onClick={onOpenImport} title="Paste device output">
         <ClipboardPaste size={16} /> Paste Import
+      </button>
+      <button type="button" className="toolbar-btn" onClick={onOpenShare} title="Save & share by code">
+        <Share2 size={16} /> Share
       </button>
       <button type="button" className="toolbar-btn" onClick={onTidy} title="Auto-layout">
         <LayoutGrid size={16} /> Tidy

@@ -5,6 +5,7 @@ import { DevicePalette } from './components/DevicePalette';
 import { Canvas } from './components/Canvas';
 import { InspectorPanel } from './components/InspectorPanel';
 import { ImportModal } from './components/ImportModal';
+import { ShareModal } from './components/ShareModal';
 import { useNetMapState } from './hooks/useNetMapState';
 import { exportCanvasAsPng, exportCanvasAsSvg } from './lib/exportImage';
 import './styles/theme.css';
@@ -13,6 +14,7 @@ import './styles/app.css';
 function App() {
   const state = useNetMapState();
   const [importOpen, setImportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const selectedNode = useMemo(
     () => state.nodes.find((n) => n.id === state.selectedId) ?? null,
@@ -28,6 +30,7 @@ function App() {
       <div className="app-shell">
         <Toolbar
           onOpenImport={() => setImportOpen(true)}
+          onOpenShare={() => setShareOpen(true)}
           onTidy={state.runTidy}
           onExportPng={() => exportCanvasAsPng(state.nodes)}
           onExportSvg={() => exportCanvasAsSvg(state.nodes)}
@@ -58,6 +61,14 @@ function App() {
       </div>
       {importOpen && (
         <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />
+      )}
+      {shareOpen && (
+        <ShareModal
+          currentCode={state.shareCode}
+          onSave={state.saveShareLink}
+          onLoad={state.loadShareLink}
+          onClose={() => setShareOpen(false)}
+        />
       )}
     </ReactFlowProvider>
   );

@@ -10,7 +10,17 @@ import {
 import { createDevice } from '../lib/device';
 import { runDagreLayout } from '../lib/layout';
 import { parseAndCreateDevices } from '../lib/parser';
-import { loadDocument, saveDocument, clearDocument, serializeForExport, parseImportedJson } from '../lib/storage';
+import {
+  loadDocument,
+  saveDocument,
+  clearDocument,
+  serializeForExport,
+  parseImportedJson,
+  buildDocument,
+  loadShareCode,
+  saveShareCode,
+} from '../lib/storage';
+import { saveShare, loadShare } from '../lib/share';
 import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr } from '../lib/subnet';
 import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface } from '../types';
 
@@ -40,6 +50,7 @@ export function useNetMapState() {
   const [edges, setEdges] = useState<DeviceEdge[]>(initial?.edges ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [shareCode, setShareCode] = useState<string | null>(loadShareCode());
   const nodeCountRef = useRef(nodes.length);
 
   useEffect(() => {
@@ -184,11 +195,46 @@ export function useNetMapState() {
     return true;
   }, []);
 
+  const saveShareLink = useCallback(async () => {
+    try {
+      const doc = buildDocument(nodes, edges);
+      const result = await saveShare(doc, shareCode);
+      setShareCode(result.code);
+      saveShareCode(result.code);
+      return result;
+    } catch {
+      setStatusMessage('Failed to save share code — is the server running?');
+      return null;
+    }
+  }, [nodes, edges, shareCode]);
+
+  const loadShareLink = useCallback(async (code: string) => {
+    try {
+      const result = await loadShare(code);
+      if (!result) {
+        setStatusMessage(`No saved configuration found for code "${code}".`);
+        return false;
+      }
+      setNodes(result.document.nodes);
+      setEdges(result.document.edges);
+      nodeCountRef.current = result.document.nodes.length;
+      setSelectedId(null);
+      setShareCode(code.trim().toLowerCase());
+      saveShareCode(code.trim().toLowerCase());
+      setStatusMessage(`Loaded configuration "${code}".`);
+      return true;
+    } catch {
+      setStatusMessage('Failed to load share code — is the server running?');
+      return false;
+    }
+  }, []);
+
   return {
     nodes,
     edges,
     selectedId,
     statusMessage,
+    shareCode,
     setSelectedId,
     setStatusMessage,
     onNodesChange,
@@ -203,5 +249,7 @@ export function useNetMapState() {
     clearAll,
     exportJson,
     importJson,
+    saveShareLink,
+    loadShareLink,
   };
 }

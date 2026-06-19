@@ -6,5 +6,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     allowedHosts: ['netmap.packnation.org'],
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
   },
 })
