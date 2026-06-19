@@ -7,6 +7,7 @@ import { InspectorPanel } from './components/InspectorPanel';
 import { ImportModal } from './components/ImportModal';
 import { useNetMapState } from './hooks/useNetMapState';
 import { exportCanvasAsPng, exportCanvasAsSvg } from './lib/exportImage';
+import { PreferencesProvider } from './contexts/PreferencesContext';
 import './styles/theme.css';
 import './styles/app.css';
 
@@ -38,46 +39,48 @@ function App() {
   );
 
   return (
-    <ReactFlowProvider>
-      <div className="app-shell">
-        <Toolbar
-          onOpenImport={() => setImportOpen(true)}
-          onShare={handleShare}
-          onSave={state.saveShareLink}
-          onSaveAsNew={state.saveAsNewShareLink}
-          onLoad={state.loadShareLink}
-          onTidy={state.runTidy}
-          onExportPng={() => exportCanvasAsPng(state.nodes)}
-          onExportSvg={() => exportCanvasAsSvg(state.nodes)}
-          onExportJson={state.exportJson}
-          onImportJson={state.importJson}
-          onRelinkSubnets={state.relinkSubnets}
-          onClear={state.clearAll}
-          statusMessage={state.statusMessage}
-        />
-        <div className="app-body">
-          <DevicePalette onAddDevice={(type) => state.addDevice(type)} />
-          <Canvas
-            nodes={state.nodes}
-            edges={state.edges}
-            onNodesChange={state.onNodesChange}
-            onEdgesChange={state.onEdgesChange}
-            onConnect={state.onConnect}
-            onSelect={state.setSelectedId}
-            onAddDeviceAt={(type, position) => state.addDevice(type, position)}
+    <PreferencesProvider>
+      <ReactFlowProvider>
+        <div className="app-shell">
+          <Toolbar
+            onOpenImport={() => setImportOpen(true)}
+            onShare={handleShare}
+            onSave={state.saveShareLink}
+            onSaveAsNew={state.saveAsNewShareLink}
+            onLoad={state.loadShareLink}
+            onTidy={state.runTidy}
+            onExportPng={() => exportCanvasAsPng(state.nodes)}
+            onExportSvg={() => exportCanvasAsSvg(state.nodes)}
+            onExportJson={state.exportJson}
+            onImportJson={state.importJson}
+            onRelinkSubnets={state.relinkSubnets}
+            onClear={state.clearAll}
+            statusMessage={state.statusMessage}
           />
-          <InspectorPanel
-            selectedNode={selectedNode}
-            selectedEdge={selectedEdge}
-            onUpdateDevice={state.updateDevice}
-            onDeleteSelected={state.deleteSelected}
-          />
+          <div className="app-body">
+            <DevicePalette onAddDevice={(type) => state.addDevice(type)} />
+            <Canvas
+              nodes={state.nodes}
+              edges={state.edges}
+              onNodesChange={state.onNodesChange}
+              onEdgesChange={state.onEdgesChange}
+              onConnect={state.onConnect}
+              onSelect={state.setSelectedId}
+              onAddDeviceAt={(type, position) => state.addDevice(type, position)}
+            />
+            <InspectorPanel
+              selectedNode={selectedNode}
+              selectedEdge={selectedEdge}
+              onUpdateDevice={state.updateDevice}
+              onDeleteSelected={state.deleteSelected}
+            />
+          </div>
         </div>
-      </div>
-      {importOpen && (
-        <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />
-      )}
-    </ReactFlowProvider>
+        {importOpen && (
+          <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />
+        )}
+      </ReactFlowProvider>
+    </PreferencesProvider>
   );
 }
 

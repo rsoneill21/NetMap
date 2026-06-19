@@ -28,6 +28,7 @@ export interface Device {
   interfaces: NetInterface[];
   notes?: string;
   manuallyPositioned?: boolean;
+  ports?: number[];
 }
 
 export type DeviceNodeData = Device & Record<string, unknown>;

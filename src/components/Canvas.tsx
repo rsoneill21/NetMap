@@ -87,16 +87,16 @@ export function Canvas({
         minZoom={0.1}
         maxZoom={2.5}
       >
-        <Background id="minor" variant={BackgroundVariant.Lines} gap={20} lineWidth={1} color="rgba(56, 189, 248, 0.12)" />
-        <Background id="major" variant={BackgroundVariant.Lines} gap={100} lineWidth={1} color="rgba(56, 189, 248, 0.28)" />
+        <Background id="minor" variant={BackgroundVariant.Lines} gap={20} lineWidth={1} color="var(--bp-grid-minor)" />
+        <Background id="major" variant={BackgroundVariant.Lines} gap={100} lineWidth={1} color="var(--bp-grid-major)" />
         <Controls />
         <MiniMap
           pannable
           zoomable
           className="netmap-minimap"
-          maskColor="rgba(56, 189, 248, 0.08)"
-          nodeColor="#0f2140"
-          nodeStrokeColor="#38bdf8"
+          maskColor="var(--bp-cyan-hover)"
+          nodeColor="var(--bp-bg-panel-light)"
+          nodeStrokeColor="var(--bp-cyan)"
           nodeStrokeWidth={2}
         />
       </ReactFlow>

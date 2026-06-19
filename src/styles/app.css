@@ -45,7 +45,7 @@
 
 .toolbar-btn:hover {
   border-color: var(--bp-cyan);
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--bp-cyan-hover);
 }
 
 .toolbar-btn:disabled {
@@ -55,7 +55,7 @@
 
 .toolbar-btn-primary {
   border-color: var(--bp-cyan);
-  background: rgba(56, 189, 248, 0.15);
+  background: var(--bp-cyan-active);
 }
 
 .toolbar-btn-danger {
@@ -68,20 +68,30 @@
 }
 
 .toolbar-status {
-  margin-left: auto;
   font-size: 11px;
   color: var(--bp-cyan-bright);
   opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.save-menu {
+.toolbar-divider {
+  color: var(--bp-cyan-dim);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-menu {
   position: relative;
 }
 
-.save-menu-dropdown {
+.toolbar-menu-dropdown {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  right: 0;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -94,8 +104,10 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.save-menu-item {
-  display: block;
+.toolbar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   text-align: left;
   background: transparent;
@@ -108,39 +120,65 @@
   cursor: pointer;
 }
 
-.save-menu-item:hover {
-  background: rgba(56, 189, 248, 0.08);
+.toolbar-menu-item:hover {
+  background: var(--bp-cyan-hover);
 }
 
-.save-menu-item:disabled {
+.toolbar-menu-item:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.save-menu-divider {
+.toolbar-menu-item.is-active {
+  border: 1px solid var(--bp-cyan);
+  background: var(--bp-cyan-active);
+}
+
+.toolbar-menu-toggle-row {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbar-menu-toggle-row .toolbar-menu-item {
+  flex: 1;
+  justify-content: center;
+}
+
+.toolbar-menu-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--bp-white);
+  cursor: pointer;
+}
+
+.toolbar-menu-divider {
   height: 1px;
   background: var(--bp-cyan-dim);
   margin: 4px 0;
 }
 
-.save-menu-load {
+.toolbar-menu-load {
   padding: 4px 8px;
 }
 
-.save-menu-label {
+.toolbar-menu-label {
   display: block;
   font-size: 10px;
   color: var(--bp-cyan-bright);
   opacity: 0.85;
   margin-bottom: 4px;
+  padding: 0 8px;
 }
 
-.save-menu-load-row {
+.toolbar-menu-load-row {
   display: flex;
   gap: 6px;
 }
 
-.save-menu-load-input {
+.toolbar-menu-load-input {
   flex: 1;
   min-width: 0;
   background: transparent;
@@ -150,6 +188,17 @@
   border-radius: 4px;
   font-size: 11px;
   font-family: inherit;
+}
+
+.ports-editor-input {
+  width: 100%;
+  background: var(--bp-bg);
+  border: 1px solid var(--bp-cyan-dim);
+  color: var(--bp-white);
+  padding: 5px 6px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 11px;
 }
 
 .device-palette {
@@ -189,7 +238,7 @@
 
 .palette-item:hover {
   border-color: var(--bp-cyan);
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--bp-cyan-hover);
 }
 
 .canvas-wrapper {

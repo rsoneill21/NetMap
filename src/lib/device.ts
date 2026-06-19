@@ -46,5 +46,6 @@ export function createDevice(type: DeviceType, label?: string): Device {
     label: label ?? deviceTypeMeta[type].label,
     type,
     interfaces: defaultInterfacesFor(type),
+    ports: [],
   };
 }

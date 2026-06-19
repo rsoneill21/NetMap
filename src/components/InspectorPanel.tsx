@@ -1,5 +1,6 @@
 import { createInterface, deviceTypeMeta, deviceTypeOrder } from '../lib/device';
 import { InterfaceEditorRow } from './InterfaceEditorRow';
+import { PortsEditor } from './PortsEditor';
 import type { Device, DeviceEdge, DeviceNode, DeviceType } from '../types';
 
 interface InspectorPanelProps {
@@ -53,7 +54,7 @@ export function InspectorPanel({ selectedNode, selectedEdge, onUpdateDevice, onD
   }
 
   return (
-    <aside className="inspector-panel">
+    <aside className="inspector-panel" key={device.id}>
       <h2 className="panel-title">Device</h2>
       <div className="inspector-field">
         <label>Name</label>
@@ -104,6 +105,13 @@ export function InspectorPanel({ selectedNode, selectedEdge, onUpdateDevice, onD
         >
           + Interface
         </button>
+      </div>
+      <div className="inspector-field">
+        <label>Ports</label>
+        <PortsEditor
+          ports={device.ports ?? []}
+          onChange={(ports) => update((d) => ({ ...d, ports }))}
+        />
       </div>
       <div className="inspector-field">
         <label>Notes</label>

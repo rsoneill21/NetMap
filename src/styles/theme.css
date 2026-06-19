@@ -2,17 +2,41 @@
   --bp-bg: #071029;
   --bp-bg-panel: #0b1830;
   --bp-bg-panel-light: #0f2140;
+  --bp-node-bg: rgba(11, 24, 48, 0.85);
   --bp-cyan: #38bdf8;
   --bp-cyan-bright: #7dd3fc;
   --bp-cyan-dim: rgba(56, 189, 248, 0.15);
+  --bp-cyan-hover: rgba(56, 189, 248, 0.08);
+  --bp-cyan-active: rgba(56, 189, 248, 0.15);
+  --bp-cyan-faint: rgba(56, 189, 248, 0.04);
+  --bp-grid-minor: rgba(56, 189, 248, 0.12);
+  --bp-grid-major: rgba(56, 189, 248, 0.28);
   --bp-white: #e8f4fb;
   --bp-amber: #fbbf24;
   --bp-red: #f87171;
   --bp-line-width: 1.25px;
 }
 
+:root[data-theme='light'] {
+  --bp-bg: #f4f8fb;
+  --bp-bg-panel: #ffffff;
+  --bp-bg-panel-light: #eef3f8;
+  --bp-node-bg: rgba(255, 255, 255, 0.92);
+  --bp-cyan: #0284c7;
+  --bp-cyan-bright: #0369a1;
+  --bp-cyan-dim: rgba(2, 132, 199, 0.15);
+  --bp-cyan-hover: rgba(2, 132, 199, 0.08);
+  --bp-cyan-active: rgba(2, 132, 199, 0.15);
+  --bp-cyan-faint: rgba(2, 132, 199, 0.04);
+  --bp-grid-minor: rgba(2, 132, 199, 0.12);
+  --bp-grid-major: rgba(2, 132, 199, 0.28);
+  --bp-white: #0f172a;
+  --bp-amber: #b45309;
+  --bp-red: #dc2626;
+}
+
 .device-node {
-  background: rgba(11, 24, 48, 0.85);
+  background: var(--bp-node-bg);
   border: var(--bp-line-width) solid var(--bp-cyan);
   border-radius: 3px;
   color: var(--bp-white);
@@ -114,6 +138,32 @@
   border: 1px solid var(--bp-bg) !important;
 }
 
+.device-node-ports {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--bp-cyan-dim);
+}
+
+.device-node-ports-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bp-cyan-dim);
+  margin-right: 2px;
+}
+
+.port-badge {
+  font-size: 10px;
+  color: var(--bp-cyan-bright);
+  border: 1px solid var(--bp-cyan-dim);
+  background: var(--bp-cyan-hover);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
 .subnet-group-overlay {
   position: absolute;
   top: 0;
@@ -128,7 +178,7 @@
   position: absolute;
   border: 1px dashed var(--bp-cyan-dim);
   border-radius: 6px;
-  background: rgba(56, 189, 248, 0.04);
+  background: var(--bp-cyan-faint);
 }
 
 .subnet-group-label {
@@ -156,7 +206,7 @@
 }
 
 .react-flow__controls-button:hover {
-  background: rgba(56, 189, 248, 0.15);
+  background: var(--bp-cyan-active);
 }
 
 .react-flow__controls-button svg {

@@ -47,6 +47,16 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
         ))}
         {data.interfaces.length === 0 && <div className="device-node-empty">No interfaces</div>}
       </div>
+      {data.ports != null && data.ports.length > 0 && (
+        <div className="device-node-ports">
+          <span className="device-node-ports-label">Ports</span>
+          {data.ports.map((port) => (
+            <span key={port} className="port-badge">
+              {port}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useStore, useViewport, type ReactFlowState } from '@xyflow/react';
 import { computeSubnetGroups } from '../lib/subnet';
+import { usePreferences } from '../hooks/usePreferences';
 import type { DeviceNode } from '../types';
 
 const PADDING = 24;
@@ -7,9 +8,12 @@ const PADDING = 24;
 const nodesSelector = (state: ReactFlowState) => state.nodeLookup;
 
 export function SubnetGroupOverlay({ nodes }: { nodes: DeviceNode[] }) {
+  const { showSubnetBoundaries } = usePreferences();
   const nodeLookup = useStore(nodesSelector);
   const { x: viewX, y: viewY, zoom } = useViewport();
   const groups = computeSubnetGroups(nodes);
+
+  if (!showSubnetBoundaries) return null;
 
   return (
     <div className="subnet-group-overlay">

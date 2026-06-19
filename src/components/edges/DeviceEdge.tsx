@@ -1,4 +1,5 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
+import { usePreferences } from '../../hooks/usePreferences';
 import type { DeviceEdge as DeviceEdgeType } from '../../types';
 
 export function DeviceEdge({
@@ -10,6 +11,7 @@ export function DeviceEdge({
   targetPosition,
   data,
 }: EdgeProps<DeviceEdgeType>) {
+  const { showSubnetLabels } = usePreferences();
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -25,7 +27,7 @@ export function DeviceEdge({
   return (
     <BaseEdge
       path={edgePath}
-      label={mismatch ? 'subnet mismatch' : data?.subnetCidr}
+      label={mismatch ? 'subnet mismatch' : showSubnetLabels ? data?.subnetCidr : undefined}
       labelX={labelX}
       labelY={labelY}
       labelStyle={{ fill: mismatch ? 'var(--bp-amber)' : 'var(--bp-cyan-bright)', fontSize: 10 }}
