@@ -43,7 +43,7 @@ NetMap has two parts that both need to be running:
    - **Manual drag** — drag from one interface's connection dot to another's directly on the canvas.
 4. **Clean up the layout.** Click **Tidy** to auto-arrange the whole map (Dagre layout); the view re-fits automatically afterward.
 5. **Save your work.** Click **Save** in the toolbar for a dropdown with three options:
-   - **Save** — persists immediately to whichever link is currently open, or creates a new one if you haven't saved yet. The map's 4-character code becomes part of the URL (e.g. `netmap.packnation.org/ab3d`).
+   - **Save** — persists immediately to whichever link is currently open, or creates a new one if you haven't saved yet. The map's 4-character code becomes part of the URL (e.g. `/ab3d`).
    - **Save as New Link** — always creates a brand-new, independent code, leaving whatever was previously saved under the old code untouched — this is how you keep multiple separate saved maps without one overwriting another.
    - **Load by Code** — opens any previously saved map by its 4-character code.
 
@@ -67,7 +67,13 @@ npm run lint   # ESLint
 
 ## Exposing it externally
 
-If you're tunneling the dev server (e.g. via Cloudflare Tunnel) under a custom hostname, add that hostname to `server.allowedHosts` in `vite.config.ts` — it's already set up for `netmap.packnation.org` as an example.
+If you're tunneling the dev server (e.g. via Cloudflare Tunnel, a reverse proxy, or a port forward) under a custom hostname, Vite will reject requests for that host by default. Copy `.env.local.example` to `.env.local` (gitignored, so it stays specific to your own install) and set:
+
+```bash
+NETMAP_ALLOWED_HOST=your.custom.hostname
+```
+
+Comma-separate multiple hostnames if needed. `vite.config.ts` reads this at startup via `loadEnv` and adds it to `server.allowedHosts`.
 
 ## Features
 

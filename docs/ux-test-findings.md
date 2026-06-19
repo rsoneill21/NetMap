@@ -1,6 +1,6 @@
 # NetMap UX/Functionality Test Findings
 
-Session: 2026-06-19. Tester: Claude (acting as UI/UX tester + network developer), via Claude-in-Chrome browser automation against https://netmap.packnation.org.
+Session: 2026-06-19. Tester: Claude (acting as UI/UX tester + network developer), via Claude-in-Chrome browser automation against a locally-hosted NetMap instance.
 
 Goal: build a realistic university network (4 schools, each with routers/switches/hosts, connected to each other and to the internet where appropriate) using only the production UI, and log bugs/issues/UX friction encountered along the way.
 
@@ -38,11 +38,11 @@ Goal: build a realistic university network (4 schools, each with routers/switche
 **Where:** `src/hooks/useNetMapState.ts` kept a single `shareCode` in `localStorage` (`netmap.sharecode.v1`). Once any save happened, the Share dialog only offered "Update Saved Code" — there was no way to deliberately start a second, independent saved map without manually clearing browser storage.
 **Impact:** Reported by the user directly: "I can't have more than one [saved layout]." The backend (`server/index.js`) already supports unlimited distinct 4-char codes — this was purely a client-side limitation.
 **Status: FIXED (2026-06-19).**
-- The share code now lives in the URL (`netmap.packnation.org/<code>`), not localStorage. `src/lib/share.ts` adds `codeFromUrl()`/`setUrlCode()`; `useNetMapState.ts` reads the code from the URL on mount and auto-loads that saved map, and pushes the URL (via `history.pushState`) on every save/load so the address bar is always a real permalink to what's open.
+- The share code now lives in the URL (`/<code>`), not localStorage. `src/lib/share.ts` adds `codeFromUrl()`/`setUrlCode()`; `useNetMapState.ts` reads the code from the URL on mount and auto-loads that saved map, and pushes the URL (via `history.pushState`) on every save/load so the address bar is always a real permalink to what's open.
 - The Share dialog (`ShareModal.tsx`) now offers two actions once a code is open: **"Update This Link (code)"** (overwrites the currently-open save) and **"Save as New Link"** (always requests a brand-new code, leaving the old one's saved document untouched on the server) — this is the direct fix for "can't have more than one."
 - `Clear` now also detaches you from the current link (resets the URL to `/`) so your next save doesn't silently overwrite whatever you were viewing.
-- Confirmed Vite's dev server (which is what actually serves `netmap.packnation.org` here — no nginx/static build in front of it) already serves `index.html` for arbitrary unmatched paths like `/ab3d` by default, so no server-side routing change was needed for direct/bookmarked links to work.
-- Typecheck, lint, and `vite build` all pass. Live browser verification against the running instance was attempted but blocked by a Chrome-extension permission prompt that couldn't be resolved this session — **please manually verify** the checklist below on netmap.packnation.org before considering this fully closed:
+- Confirmed Vite's dev server (no nginx/static build in front of it in this deployment) already serves `index.html` for arbitrary unmatched paths like `/ab3d` by default, so no server-side routing change was needed for direct/bookmarked links to work.
+- Typecheck, lint, and `vite build` all pass. Live browser verification against the running instance was attempted but blocked by a Chrome-extension permission prompt that couldn't be resolved this session — **please manually verify** the checklist below on your NetMap instance before considering this fully closed:
   1. Save a map → confirm the URL changes to `/<code>` and the modal shows "Update This Link (`<code>`)".
   2. Make an edit, click "Save as New Link" → confirm a *different* code appears and the URL updates to it.
   3. Reload the page at that new URL directly → confirm it auto-loads the same map (not a blank canvas).
@@ -57,4 +57,4 @@ Final result: **72 devices, 69 links, 0 subnet mismatches.**
 - MED: same BR/IR/admin-switch/6-hosts/server pattern (internet-reachable), **plus** `MED-SW-RESEARCH` — a switch with 6 hosts on `10.99.99.0/24` that has **no uplink interface connected to anything** (confirmed: exactly 6 edges, all to its own hosts, zero path to MED-IR/core/internet). This demonstrates a network segment that intentionally has no internet (or even campus) connectivity, e.g. for an air-gapped research/compliance requirement.
 - No orphaned devices (every non-cloud device has at least one link) and no auto-link subnet mismatches anywhere in the build.
 
-Share code for the saved network: **0gvs** (saved via the app's own Share & Save feature, expires 2026-06-25 ~22:01 per the app's stated 7-day TTL). Load it from the Share dialog's "Load by Code" field on https://netmap.packnation.org.
+Share code for the saved network: **0gvs** (saved via the app's own Share & Save feature, expires 2026-06-25 ~22:01 per the app's stated 7-day TTL). Load it via "Load by Code" on your own NetMap instance.
