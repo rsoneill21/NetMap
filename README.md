@@ -77,5 +77,5 @@ If you're tunneling the dev server (e.g. via Cloudflare Tunnel) under a custom h
 - **Tidy** — auto-layout via Dagre; the viewport re-fits automatically afterward.
 - **Export** — PNG, SVG, or JSON.
 - **Import JSON** — reload a previously exported `.json` map.
-- **Save** — toolbar dropdown for Save, Save as New Link, and Load by Code; the active code lives in the URL (`netmap.packnation.org/<code>`) (see backend setup above).
+- **Save** — toolbar dropdown for Save, Save as New Link, and Load by Code.
 - **Share** — one click to copy the current map's link to your clipboard.
