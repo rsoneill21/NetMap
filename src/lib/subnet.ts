@@ -11,7 +11,6 @@ export interface AddressRef {
 export function computeSubnetBuckets(nodes: DeviceNode[]): Map<string, AddressRef[]> {
   const buckets = new Map<string, AddressRef[]>();
   for (const node of nodes) {
-    if (node.data.type === 'cloud') continue;
     for (const iface of node.data.interfaces) {
       for (const addr of iface.addresses) {
         if (addr.isLinkLocal || addr.isLoopback) continue;

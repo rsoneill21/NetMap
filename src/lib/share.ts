@@ -26,3 +26,19 @@ export async function loadShare(code: string): Promise<ShareLoadResult | null> {
   if (!res.ok) throw new Error('Failed to load share code');
   return res.json();
 }
+
+const CODE_IN_PATH_RE = /^\/([a-z0-9]{4})\/?$/i;
+
+/** Reads a 4-character share code from the current URL path, e.g. "/ab3d" -> "ab3d". */
+export function codeFromUrl(): string | null {
+  const match = window.location.pathname.match(CODE_IN_PATH_RE);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/** Updates the address bar to reflect the given share code (or "/" when null), without reloading the page. */
+export function setUrlCode(code: string | null): void {
+  const path = code ? `/${code}` : '/';
+  if (window.location.pathname !== path) {
+    window.history.pushState(null, '', path);
+  }
+}

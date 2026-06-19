@@ -4,11 +4,12 @@ import type { ShareSaveResult } from '../lib/share';
 interface ShareModalProps {
   currentCode: string | null;
   onSave: () => Promise<ShareSaveResult | null>;
+  onSaveAsNew: () => Promise<ShareSaveResult | null>;
   onLoad: (code: string) => Promise<boolean>;
   onClose: () => void;
 }
 
-export function ShareModal({ currentCode, onSave, onLoad, onClose }: ShareModalProps) {
+export function ShareModal({ currentCode, onSave, onSaveAsNew, onLoad, onClose }: ShareModalProps) {
   const [saving, setSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<ShareSaveResult | null>(null);
   const [loadCode, setLoadCode] = useState('');
@@ -17,6 +18,13 @@ export function ShareModal({ currentCode, onSave, onLoad, onClose }: ShareModalP
   async function handleSave() {
     setSaving(true);
     const result = await onSave();
+    setSaveResult(result);
+    setSaving(false);
+  }
+
+  async function handleSaveAsNew() {
+    setSaving(true);
+    const result = await onSaveAsNew();
     setSaveResult(result);
     setSaving(false);
   }
@@ -37,12 +45,20 @@ export function ShareModal({ currentCode, onSave, onLoad, onClose }: ShareModalP
       <div className="modal">
         <h2>Save &amp; Share</h2>
         <p className="modal-help">
-          Save the current map to get a 4-character code. Anyone with the code can load this map for the next
-          7 days.
+          Save the current map to get a 4-character code. The code becomes part of the page URL
+          (e.g. <code>netmap.packnation.org/ab3d</code>) — bookmark or share that link directly. Anyone with the
+          code/link can load this map for the next 7 days.
         </p>
-        <button type="button" className="toolbar-btn toolbar-btn-primary" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : currentCode ? 'Update Saved Code' : 'Generate Code'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button type="button" className="toolbar-btn toolbar-btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : currentCode ? `Update This Link (${currentCode})` : 'Generate Code'}
+          </button>
+          {currentCode && (
+            <button type="button" className="toolbar-btn" onClick={handleSaveAsNew} disabled={saving}>
+              {saving ? 'Saving...' : 'Save as New Link'}
+            </button>
+          )}
+        </div>
         {displayedCode && (
           <div className="modal-preview">
             Code: <strong>{displayedCode}</strong>

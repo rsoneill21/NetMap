@@ -21,34 +21,32 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
         <span className="device-node-label">{data.label}</span>
         <span className="device-node-type">{meta.label}</span>
       </div>
-      {data.type !== 'cloud' && (
-        <div className="device-node-interfaces">
-          {data.interfaces.map((iface) => (
-            <div key={iface.id} className="device-node-iface-row">
-              <Handle
-                type="target"
-                position={Position.Left}
-                id={`${iface.id}-target`}
-                className="iface-handle"
-              />
-              <span className={statusDotClass(iface.status)} />
-              <span className="iface-name">{iface.name}</span>
-              <span className="iface-addresses">
-                {iface.addresses.length > 0
-                  ? iface.addresses.map((a) => formatIpAddress(a)).join(', ')
-                  : '—'}
-              </span>
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={`${iface.id}-source`}
-                className="iface-handle"
-              />
-            </div>
-          ))}
-          {data.interfaces.length === 0 && <div className="device-node-empty">No interfaces</div>}
-        </div>
-      )}
+      <div className="device-node-interfaces">
+        {data.interfaces.map((iface) => (
+          <div key={iface.id} className="device-node-iface-row">
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={`${iface.id}-target`}
+              className="iface-handle"
+            />
+            <span className={statusDotClass(iface.status)} />
+            <span className="iface-name">{iface.name}</span>
+            <span className="iface-addresses">
+              {iface.addresses.length > 0
+                ? iface.addresses.map((a) => formatIpAddress(a)).join(', ')
+                : '—'}
+            </span>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`${iface.id}-source`}
+              className="iface-handle"
+            />
+          </div>
+        ))}
+        {data.interfaces.length === 0 && <div className="device-node-empty">No interfaces</div>}
+      </div>
     </div>
   );
 }

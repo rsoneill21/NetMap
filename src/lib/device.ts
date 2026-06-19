@@ -35,7 +35,7 @@ export function createInterface(name: string): NetInterface {
 }
 
 function defaultInterfacesFor(type: DeviceType): NetInterface[] {
-  if (type === 'cloud') return [];
+  if (type === 'cloud') return [createInterface('uplink')];
   if (type === 'switch') return [createInterface('eth0'), createInterface('eth1')];
   return [createInterface('eth0')];
 }

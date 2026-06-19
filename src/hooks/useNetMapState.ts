@@ -17,10 +17,8 @@ import {
   serializeForExport,
   parseImportedJson,
   buildDocument,
-  loadShareCode,
-  saveShareCode,
 } from '../lib/storage';
-import { saveShare, loadShare } from '../lib/share';
+import { saveShare, loadShare, codeFromUrl, setUrlCode } from '../lib/share';
 import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr } from '../lib/subnet';
 import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface } from '../types';
 
@@ -50,7 +48,7 @@ export function useNetMapState() {
   const [edges, setEdges] = useState<DeviceEdge[]>(initial?.edges ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [shareCode, setShareCode] = useState<string | null>(loadShareCode());
+  const [shareCode, setShareCode] = useState<string | null>(null);
   const nodeCountRef = useRef(nodes.length);
 
   useEffect(() => {
@@ -177,6 +175,8 @@ export function useNetMapState() {
     setSelectedId(null);
     nodeCountRef.current = 0;
     clearDocument();
+    setShareCode(null);
+    setUrlCode(null);
   }, []);
 
   const exportJson = useCallback(() => serializeForExport(nodes, edges), [nodes, edges]);
@@ -200,7 +200,8 @@ export function useNetMapState() {
       const doc = buildDocument(nodes, edges);
       const result = await saveShare(doc, shareCode);
       setShareCode(result.code);
-      saveShareCode(result.code);
+      setUrlCode(result.code);
+      setStatusMessage(`Saved — code ${result.code}.`);
       return result;
     } catch {
       setStatusMessage('Failed to save share code — is the server running?');
@@ -208,26 +209,57 @@ export function useNetMapState() {
     }
   }, [nodes, edges, shareCode]);
 
-  const loadShareLink = useCallback(async (code: string) => {
+  // Always requests a brand-new code, leaving whatever is currently saved under the old
+  // code (if any) untouched — this is how you get a second/third/etc. independent saved map.
+  const saveAsNewShareLink = useCallback(async () => {
     try {
-      const result = await loadShare(code);
+      const doc = buildDocument(nodes, edges);
+      const result = await saveShare(doc, null);
+      setShareCode(result.code);
+      setUrlCode(result.code);
+      return result;
+    } catch {
+      setStatusMessage('Failed to save share code — is the server running?');
+      return null;
+    }
+  }, [nodes, edges]);
+
+  const loadShareLink = useCallback(async (code: string) => {
+    const normalized = code.trim().toLowerCase();
+    try {
+      const result = await loadShare(normalized);
       if (!result) {
-        setStatusMessage(`No saved configuration found for code "${code}".`);
+        setStatusMessage(`No saved configuration found for code "${normalized}".`);
         return false;
       }
       setNodes(result.document.nodes);
       setEdges(result.document.edges);
       nodeCountRef.current = result.document.nodes.length;
       setSelectedId(null);
-      setShareCode(code.trim().toLowerCase());
-      saveShareCode(code.trim().toLowerCase());
-      setStatusMessage(`Loaded configuration "${code}".`);
+      setShareCode(normalized);
+      setUrlCode(normalized);
+      setStatusMessage(`Loaded configuration "${normalized}".`);
       return true;
     } catch {
       setStatusMessage('Failed to load share code — is the server running?');
       return false;
     }
   }, []);
+
+  // On first load, if the URL is e.g. "/ab3d", fetch and open that saved map automatically.
+  const urlLoadAttempted = useRef(false);
+  useEffect(() => {
+    if (urlLoadAttempted.current) return;
+    urlLoadAttempted.current = true;
+    const code = codeFromUrl();
+    if (!code) return;
+    // Fetches the saved document for the URL's code and applies it once it resolves —
+    // the standard fetch-on-mount pattern; setState happens in the async callback, not synchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadShareLink(code).then((ok) => {
+      if (!ok) setUrlCode(null);
+    });
+  }, [loadShareLink]);
 
   return {
     nodes,
@@ -250,6 +282,7 @@ export function useNetMapState() {
     exportJson,
     importJson,
     saveShareLink,
+    saveAsNewShareLink,
     loadShareLink,
   };
 }

@@ -75,38 +75,36 @@ export function InspectorPanel({ selectedNode, selectedEdge, onUpdateDevice, onD
           ))}
         </select>
       </div>
-      {device.type !== 'cloud' && (
-        <div className="inspector-field">
-          <label>Interfaces</label>
-          {device.interfaces.map((iface) => (
-            <InterfaceEditorRow
-              key={iface.id}
-              iface={iface}
-              onChange={(next) =>
-                update((d) => ({
-                  ...d,
-                  interfaces: d.interfaces.map((i) => (i.id === next.id ? next : i)),
-                }))
-              }
-              onRemove={() =>
-                update((d) => ({ ...d, interfaces: d.interfaces.filter((i) => i.id !== iface.id) }))
-              }
-            />
-          ))}
-          <button
-            type="button"
-            className="toolbar-btn"
-            onClick={() =>
+      <div className="inspector-field">
+        <label>Interfaces</label>
+        {device.interfaces.map((iface) => (
+          <InterfaceEditorRow
+            key={iface.id}
+            iface={iface}
+            onChange={(next) =>
               update((d) => ({
                 ...d,
-                interfaces: [...d.interfaces, createInterface(`eth${d.interfaces.length}`)],
+                interfaces: d.interfaces.map((i) => (i.id === next.id ? next : i)),
               }))
             }
-          >
-            + Interface
-          </button>
-        </div>
-      )}
+            onRemove={() =>
+              update((d) => ({ ...d, interfaces: d.interfaces.filter((i) => i.id !== iface.id) }))
+            }
+          />
+        ))}
+        <button
+          type="button"
+          className="toolbar-btn"
+          onClick={() =>
+            update((d) => ({
+              ...d,
+              interfaces: [...d.interfaces, createInterface(`eth${d.interfaces.length}`)],
+            }))
+          }
+        >
+          + Interface
+        </button>
+      </div>
       <div className="inspector-field">
         <label>Notes</label>
         <textarea

@@ -31,6 +31,7 @@ function App() {
         <Toolbar
           onOpenImport={() => setImportOpen(true)}
           onOpenShare={() => setShareOpen(true)}
+          onSave={state.saveShareLink}
           onTidy={state.runTidy}
           onExportPng={() => exportCanvasAsPng(state.nodes)}
           onExportSvg={() => exportCanvasAsSvg(state.nodes)}
@@ -66,6 +67,7 @@ function App() {
         <ShareModal
           currentCode={state.shareCode}
           onSave={state.saveShareLink}
+          onSaveAsNew={state.saveAsNewShareLink}
           onLoad={state.loadShareLink}
           onClose={() => setShareOpen(false)}
         />

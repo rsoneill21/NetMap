@@ -1,9 +1,12 @@
-import { useRef } from 'react';
-import { ClipboardPaste, LayoutGrid, Image, Download, Upload, Trash2, RefreshCw, Share2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useReactFlow } from '@xyflow/react';
+import { ClipboardPaste, LayoutGrid, Image, Download, Upload, Trash2, RefreshCw, Share2, Save } from 'lucide-react';
+import type { ShareSaveResult } from '../lib/share';
 
 interface ToolbarProps {
   onOpenImport: () => void;
   onOpenShare: () => void;
+  onSave: () => Promise<ShareSaveResult | null>;
   onTidy: () => void;
   onExportPng: () => void;
   onExportSvg: () => void;
@@ -17,6 +20,7 @@ interface ToolbarProps {
 export function Toolbar({
   onOpenImport,
   onOpenShare,
+  onSave,
   onTidy,
   onExportPng,
   onExportSvg,
@@ -27,6 +31,19 @@ export function Toolbar({
   statusMessage,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { fitView } = useReactFlow();
+  const [saving, setSaving] = useState(false);
+
+  function handleTidy() {
+    onTidy();
+    requestAnimationFrame(() => fitView({ padding: 0.2 }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    await onSave();
+    setSaving(false);
+  }
 
   function handleExportJson() {
     const json = onExportJson();
@@ -57,13 +74,22 @@ export function Toolbar({
   return (
     <header className="toolbar">
       <div className="toolbar-brand">NetMap</div>
+      <button
+        type="button"
+        className="toolbar-btn toolbar-btn-primary"
+        onClick={handleSave}
+        disabled={saving}
+        title="Save now to the current link (creates one if you haven't saved yet)"
+      >
+        <Save size={16} /> {saving ? 'Saving...' : 'Save'}
+      </button>
       <button type="button" className="toolbar-btn" onClick={onOpenImport} title="Paste device output">
         <ClipboardPaste size={16} /> Paste Import
       </button>
-      <button type="button" className="toolbar-btn" onClick={onOpenShare} title="Save & share by code">
+      <button type="button" className="toolbar-btn" onClick={onOpenShare} title="Manage saved links / load by code">
         <Share2 size={16} /> Share
       </button>
-      <button type="button" className="toolbar-btn" onClick={onTidy} title="Auto-layout">
+      <button type="button" className="toolbar-btn" onClick={handleTidy} title="Auto-layout">
         <LayoutGrid size={16} /> Tidy
       </button>
       <button type="button" className="toolbar-btn" onClick={onRelinkSubnets} title="Re-run subnet auto-link">
