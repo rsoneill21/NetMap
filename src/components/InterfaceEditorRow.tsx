@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { parseCidrToken, formatIpAddress } from '../lib/cidr';
 import type { InterfaceStatus, NetInterface } from '../types';
 
@@ -10,6 +11,10 @@ interface InterfaceEditorRowProps {
 const STATUS_OPTIONS: InterfaceStatus[] = ['up', 'down', 'admin-down', 'unknown'];
 
 export function InterfaceEditorRow({ iface, onChange, onRemove }: InterfaceEditorRowProps) {
+  const [addressesText, setAddressesText] = useState(() =>
+    iface.addresses.map(formatIpAddress).join(', '),
+  );
+
   return (
     <div className="iface-editor-row">
       <div className="iface-editor-line">
@@ -35,9 +40,10 @@ export function InterfaceEditorRow({ iface, onChange, onRemove }: InterfaceEdito
       </div>
       <input
         className="iface-editor-addresses"
-        value={iface.addresses.map(formatIpAddress).join(', ')}
+        value={addressesText}
         placeholder="e.g. 192.168.0.1/24, ::1/128"
         onChange={(e) => {
+          setAddressesText(e.target.value);
           const tokens = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
           const parsed = tokens.map(parseCidrToken).filter((ip): ip is NonNullable<typeof ip> => ip !== null);
           onChange({ ...iface, addresses: parsed });
