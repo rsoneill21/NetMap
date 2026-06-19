@@ -1,75 +1,79 @@
 # NetMap
 
-## React + TypeScript + Vite
+A network topology mapping tool. Paste CLI output from network devices (VyOS `show int`, Linux `ip a`) or add devices manually, lay them out on a canvas, link interfaces, and export the diagram.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Prerequisites
 
-Currently, two official plugins are available:
+- Node.js 22+ (uses the built-in `node:sqlite` module)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Running it
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+NetMap has two parts that both need to be running:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. **Frontend (Vite dev server)**
+
+   ```bash
+   npm run dev
+   ```
+
+   Opens at `http://localhost:5173`. The port is pinned (`strictPort` in `vite.config.ts`), so if something else is already using 5173 the dev server will fail to start rather than silently picking a different port — stop whatever's holding it and re-run.
+
+2. **Backend (share-code API)** — required for the "Share" feature (save/load a map by a 4-character code)
+
+   ```bash
+   npm run server
+   ```
+
+   Runs an Express + SQLite API on `http://localhost:3001`. Vite proxies `/api/*` requests to it, so as long as both are running you don't need to configure anything else. Saved codes expire after 7 days; re-saving with the same code refreshes the expiry.
+
+   If you skip this, everything except Save/Share will still work (the map auto-saves to your browser's `localStorage`).
+
+## Using the app
+
+1. **Add devices.** Click (or drag) a device type from the left palette — Router, Switch, Host, Server, Firewall, or Cloud / Internet — to drop it onto the canvas. Each click adds one device in a grid; the newly added device is auto-selected.
+2. **Configure it.** With a device selected, the Inspector panel on the right lets you edit its name, type, interfaces, and notes. Click **+ Interface** to add more ports. For each interface you can set an address (e.g. `10.0.0.1/24`), status, and a description.
+3. **Connect devices.** Two ways:
+   - **Auto-link by subnet** — give two interfaces addresses in the same subnet and click **Re-link**; NetMap wires them together automatically. This is the fastest way to build out a topology (e.g. give a switch and all its hosts addresses on the same `/24` and they'll all link to the switch).
+   - **Manual drag** — drag from one interface's connection dot to another's directly on the canvas.
+4. **Clean up the layout.** Click **Tidy** to auto-arrange the whole map (Dagre layout); the view re-fits automatically afterward.
+5. **Save your work.**
+   - Click **Save** in the toolbar to persist immediately to whichever link is currently open, or to create a new one if you haven't saved yet. The map's 4-character code becomes part of the URL (e.g. `netmap.packnation.org/ab3d`) — bookmark or share that link directly to reopen the same map later (saved maps expire after 7 days).
+   - Open **Share** for more control: **Update This Link** overwrites the currently open save, **Save as New Link** always creates a brand-new independent code (so you can keep multiple separate saved maps without one overwriting another), and **Load by Code** opens any map by its 4-character code.
+   - Visiting the bare root URL (no code) always starts a fresh, unsaved canvas.
+6. **Export.** Use **PNG**/**SVG** for an image of the diagram, or **Export**/**Import** for the raw JSON document (handy for backups or editing outside the app).
+
+## Building for production
+
+```bash
+npm run build
+npm run preview   # serve the production build locally
 ```
+
+The build only produces the static frontend. To use Share in production you still need `server/index.js` running somewhere reachable at `/api`, e.g. behind the same reverse proxy/tunnel as the frontend.
+
+## Other scripts
+
+```bash
+npm run lint   # ESLint
+```
+
+## Exposing it externally
+
+If you're tunneling the dev server (e.g. via Cloudflare Tunnel) under a custom hostname, add that hostname to `server.allowedHosts` in `vite.config.ts` — it's already set up for `netmap.packnation.org` as an example.
+
+## Features
+
+- **Paste Import** — paste VyOS `show int` or Linux `ip a` output (one or more devices at once) to auto-create devices and interfaces.
+- **Manual devices** — click or drag devices from the palette onto the canvas, including Cloud / Internet nodes (these now have a real interface and can be wired in like any other device).
+- **Auto-link by subnet** — interfaces on a shared subnet are automatically linked; re-run with "Re-link".
+- **Tidy** — auto-layout via Dagre; the viewport re-fits automatically afterward.
+- **Export** — PNG, SVG, or JSON.
+- **Import JSON** — reload a previously exported `.json` map.
+- **Save** — one-click save to the currently open link (or create one) right from the toolbar.
+- **Share** — save the current map and get a 4-character code that lives in the URL (`netmap.packnation.org/<code>`); update an existing link, save as a brand-new independent link, or load any map by code (see backend setup above).
