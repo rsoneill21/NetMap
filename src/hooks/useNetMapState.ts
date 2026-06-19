@@ -11,8 +11,15 @@ import { createDevice } from '../lib/device';
 import { runDagreLayout } from '../lib/layout';
 import { parseAndCreateDevices } from '../lib/parser';
 import { loadDocument, saveDocument, clearDocument, serializeForExport, parseImportedJson } from '../lib/storage';
-import { computeAutoLinks, mergeAutoLinks } from '../lib/subnet';
-import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType } from '../types';
+import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr } from '../lib/subnet';
+import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface } from '../types';
+
+function findInterface(nodes: DeviceNode[], nodeId: string | null | undefined, handleId: string | null | undefined): NetInterface | null {
+  if (!nodeId || !handleId) return null;
+  const interfaceId = handleId.replace(/-(source|target)$/, '');
+  const node = nodes.find((n) => n.id === nodeId);
+  return node?.data.interfaces.find((iface) => iface.id === interfaceId) ?? null;
+}
 
 function deviceToNode(device: Device, position: { x: number; y: number }): DeviceNode {
   return {
@@ -48,24 +55,42 @@ export function useNetMapState() {
     setEdges((prev) => applyEdgeChanges(changes, prev));
   }, []);
 
-  const onConnect = useCallback((connection: Connection) => {
-    setEdges((prev) =>
-      addEdge<DeviceEdge>(
-        {
-          ...connection,
-          type: 'deviceEdge',
-          data: {
-            sourceInterfaceId: connection.sourceHandle ?? '',
-            targetInterfaceId: connection.targetHandle ?? '',
-            sourceInterfaceName: '',
-            targetInterfaceName: '',
-            origin: 'manual',
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      const sourceIface = findInterface(nodes, connection.source, connection.sourceHandle);
+      const targetIface = findInterface(nodes, connection.target, connection.targetHandle);
+      const sharedCidr =
+        sourceIface && targetIface ? sharedSubnetCidr(sourceIface, targetIface) : null;
+      const hasAddresses = (sourceIface?.addresses.length ?? 0) > 0 && (targetIface?.addresses.length ?? 0) > 0;
+      const subnetMismatch = hasAddresses && !sharedCidr;
+
+      if (subnetMismatch) {
+        setStatusMessage(
+          `Warning: ${sourceIface?.name ?? 'interface'} and ${targetIface?.name ?? 'interface'} are not on the same subnet.`,
+        );
+      }
+
+      setEdges((prev) =>
+        addEdge<DeviceEdge>(
+          {
+            ...connection,
+            type: 'deviceEdge',
+            data: {
+              sourceInterfaceId: connection.sourceHandle ?? '',
+              targetInterfaceId: connection.targetHandle ?? '',
+              sourceInterfaceName: sourceIface?.name ?? '',
+              targetInterfaceName: targetIface?.name ?? '',
+              subnetCidr: sharedCidr ?? undefined,
+              subnetMismatch,
+              origin: 'manual',
+            },
           },
-        },
-        prev,
-      ),
-    );
-  }, []);
+          prev,
+        ),
+      );
+    },
+    [nodes],
+  );
 
   const addDevice = useCallback((type: DeviceType, position?: { x: number; y: number }) => {
     const device = createDevice(type);

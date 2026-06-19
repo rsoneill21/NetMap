@@ -90,7 +90,15 @@ export function Canvas({
         <Background id="minor" variant={BackgroundVariant.Lines} gap={20} lineWidth={1} color="rgba(56, 189, 248, 0.12)" />
         <Background id="major" variant={BackgroundVariant.Lines} gap={100} lineWidth={1} color="rgba(56, 189, 248, 0.28)" />
         <Controls />
-        <MiniMap pannable zoomable className="netmap-minimap" />
+        <MiniMap
+          pannable
+          zoomable
+          className="netmap-minimap"
+          maskColor="rgba(56, 189, 248, 0.08)"
+          nodeColor="#0f2140"
+          nodeStrokeColor="#38bdf8"
+          nodeStrokeWidth={2}
+        />
       </ReactFlow>
       {overlay}
     </div>

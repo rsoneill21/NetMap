@@ -1,5 +1,5 @@
 import { ipv4NetworkCidr, ipv6NetworkCidr } from './cidr';
-import type { DeviceEdge, DeviceNode, IpAddress, SubnetGroup } from '../types';
+import type { DeviceEdge, DeviceNode, IpAddress, NetInterface, SubnetGroup } from '../types';
 
 export interface AddressRef {
   nodeId: string;
@@ -64,6 +64,21 @@ export function computeAutoLinks(nodes: DeviceNode[]): DeviceEdge[] {
 
 export function mergeAutoLinks(existingEdges: DeviceEdge[], newAutoEdges: DeviceEdge[]): DeviceEdge[] {
   return existingEdges.filter((e) => e.data?.origin !== 'auto').concat(newAutoEdges);
+}
+
+function networkCidr(addr: IpAddress): string {
+  return addr.family === 'ipv4'
+    ? ipv4NetworkCidr(addr.address, addr.prefixLength)
+    : ipv6NetworkCidr(addr.address, addr.prefixLength);
+}
+
+/** Returns the shared subnet CIDR between two interfaces, or null if they have no address in common subnet. */
+export function sharedSubnetCidr(a: NetInterface, b: NetInterface): string | null {
+  const aNets = a.addresses.filter((addr) => !addr.isLinkLocal && !addr.isLoopback).map(networkCidr);
+  const bNets = new Set(
+    b.addresses.filter((addr) => !addr.isLinkLocal && !addr.isLoopback).map(networkCidr),
+  );
+  return aNets.find((cidr) => bNets.has(cidr)) ?? null;
 }
 
 export function computeSubnetGroups(nodes: DeviceNode[]): SubnetGroup[] {

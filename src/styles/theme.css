@@ -141,6 +141,35 @@
   color: var(--bp-cyan-dim);
 }
 
+.react-flow__controls {
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: none;
+  border: 1px solid var(--bp-cyan-dim);
+}
+
+.react-flow__controls-button {
+  background: var(--bp-bg-panel);
+  border-bottom: 1px solid var(--bp-cyan-dim);
+  fill: var(--bp-white);
+  stroke: var(--bp-white);
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.react-flow__controls-button svg {
+  fill: var(--bp-white);
+}
+
 .netmap-minimap {
   background: var(--bp-bg-panel) !important;
+  border: 1px solid var(--bp-cyan-dim);
+  border-radius: 4px;
+}
+
+.netmap-minimap .react-flow__minimap-mask {
+  stroke: var(--bp-cyan);
+  stroke-width: 1px;
 }

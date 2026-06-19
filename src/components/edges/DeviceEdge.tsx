@@ -20,15 +20,21 @@ export function DeviceEdge({
     borderRadius: 4,
   });
 
+  const mismatch = data?.subnetMismatch;
+
   return (
     <BaseEdge
       path={edgePath}
-      label={data?.subnetCidr}
+      label={mismatch ? 'subnet mismatch' : data?.subnetCidr}
       labelX={labelX}
       labelY={labelY}
-      labelStyle={{ fill: 'var(--bp-cyan-bright)', fontSize: 10 }}
+      labelStyle={{ fill: mismatch ? 'var(--bp-amber)' : 'var(--bp-cyan-bright)', fontSize: 10 }}
       labelBgStyle={{ fill: 'var(--bp-bg-panel)' }}
-      style={{ stroke: 'var(--bp-cyan)', strokeWidth: 1.25 }}
+      style={{
+        stroke: mismatch ? 'var(--bp-amber)' : 'var(--bp-cyan)',
+        strokeWidth: 1.25,
+        strokeDasharray: mismatch ? '4 3' : undefined,
+      }}
     />
   );
 }

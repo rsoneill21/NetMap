@@ -39,6 +39,7 @@ export interface LinkData {
   sourceInterfaceName: string;
   targetInterfaceName: string;
   subnetCidr?: string;
+  subnetMismatch?: boolean;
   origin: 'auto' | 'manual';
 }
 export type LinkEdgeData = LinkData & Record<string, unknown>;
