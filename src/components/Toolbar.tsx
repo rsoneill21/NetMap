@@ -1,12 +1,15 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { ClipboardPaste, LayoutGrid, Image, Download, Upload, Trash2, RefreshCw, Share2, Save } from 'lucide-react';
+import { ClipboardPaste, LayoutGrid, Image, Download, Upload, Trash2, RefreshCw, Share2 } from 'lucide-react';
 import type { ShareSaveResult } from '../lib/share';
+import { SaveMenu } from './SaveMenu';
 
 interface ToolbarProps {
   onOpenImport: () => void;
-  onOpenShare: () => void;
+  onShare: () => void;
   onSave: () => Promise<ShareSaveResult | null>;
+  onSaveAsNew: () => Promise<ShareSaveResult | null>;
+  onLoad: (code: string) => Promise<boolean>;
   onTidy: () => void;
   onExportPng: () => void;
   onExportSvg: () => void;
@@ -19,8 +22,10 @@ interface ToolbarProps {
 
 export function Toolbar({
   onOpenImport,
-  onOpenShare,
+  onShare,
   onSave,
+  onSaveAsNew,
+  onLoad,
   onTidy,
   onExportPng,
   onExportSvg,
@@ -32,17 +37,10 @@ export function Toolbar({
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { fitView } = useReactFlow();
-  const [saving, setSaving] = useState(false);
 
   function handleTidy() {
     onTidy();
     requestAnimationFrame(() => fitView({ padding: 0.2 }));
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    await onSave();
-    setSaving(false);
   }
 
   function handleExportJson() {
@@ -74,19 +72,11 @@ export function Toolbar({
   return (
     <header className="toolbar">
       <div className="toolbar-brand">NetMap</div>
-      <button
-        type="button"
-        className="toolbar-btn toolbar-btn-primary"
-        onClick={handleSave}
-        disabled={saving}
-        title="Save now to the current link (creates one if you haven't saved yet)"
-      >
-        <Save size={16} /> {saving ? 'Saving...' : 'Save'}
-      </button>
+      <SaveMenu onSave={onSave} onSaveAsNew={onSaveAsNew} onLoad={onLoad} />
       <button type="button" className="toolbar-btn" onClick={onOpenImport} title="Paste device output">
         <ClipboardPaste size={16} /> Paste Import
       </button>
-      <button type="button" className="toolbar-btn" onClick={onOpenShare} title="Manage saved links / load by code">
+      <button type="button" className="toolbar-btn" onClick={onShare} title="Copy a shareable link to this map">
         <Share2 size={16} /> Share
       </button>
       <button type="button" className="toolbar-btn" onClick={handleTidy} title="Auto-layout">

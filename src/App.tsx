@@ -5,7 +5,6 @@ import { DevicePalette } from './components/DevicePalette';
 import { Canvas } from './components/Canvas';
 import { InspectorPanel } from './components/InspectorPanel';
 import { ImportModal } from './components/ImportModal';
-import { ShareModal } from './components/ShareModal';
 import { useNetMapState } from './hooks/useNetMapState';
 import { exportCanvasAsPng, exportCanvasAsSvg } from './lib/exportImage';
 import './styles/theme.css';
@@ -14,7 +13,20 @@ import './styles/app.css';
 function App() {
   const state = useNetMapState();
   const [importOpen, setImportOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
+
+  async function handleShare() {
+    if (!state.shareCode) {
+      state.setStatusMessage('Save the map first to get a shareable link.');
+      return;
+    }
+    const url = `${window.location.origin}/${state.shareCode}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      state.setStatusMessage(`Link copied to clipboard: ${url}`);
+    } catch {
+      state.setStatusMessage(`Copy this link: ${url}`);
+    }
+  }
 
   const selectedNode = useMemo(
     () => state.nodes.find((n) => n.id === state.selectedId) ?? null,
@@ -30,8 +42,10 @@ function App() {
       <div className="app-shell">
         <Toolbar
           onOpenImport={() => setImportOpen(true)}
-          onOpenShare={() => setShareOpen(true)}
+          onShare={handleShare}
           onSave={state.saveShareLink}
+          onSaveAsNew={state.saveAsNewShareLink}
+          onLoad={state.loadShareLink}
           onTidy={state.runTidy}
           onExportPng={() => exportCanvasAsPng(state.nodes)}
           onExportSvg={() => exportCanvasAsSvg(state.nodes)}
@@ -62,15 +76,6 @@ function App() {
       </div>
       {importOpen && (
         <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />
-      )}
-      {shareOpen && (
-        <ShareModal
-          currentCode={state.shareCode}
-          onSave={state.saveShareLink}
-          onSaveAsNew={state.saveAsNewShareLink}
-          onLoad={state.loadShareLink}
-          onClose={() => setShareOpen(false)}
-        />
       )}
     </ReactFlowProvider>
   );

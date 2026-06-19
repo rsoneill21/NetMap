@@ -42,10 +42,12 @@ NetMap has two parts that both need to be running:
    - **Auto-link by subnet** — give two interfaces addresses in the same subnet and click **Re-link**; NetMap wires them together automatically. This is the fastest way to build out a topology (e.g. give a switch and all its hosts addresses on the same `/24` and they'll all link to the switch).
    - **Manual drag** — drag from one interface's connection dot to another's directly on the canvas.
 4. **Clean up the layout.** Click **Tidy** to auto-arrange the whole map (Dagre layout); the view re-fits automatically afterward.
-5. **Save your work.**
-   - Click **Save** in the toolbar to persist immediately to whichever link is currently open, or to create a new one if you haven't saved yet. The map's 4-character code becomes part of the URL (e.g. `netmap.packnation.org/ab3d`) — bookmark or share that link directly to reopen the same map later (saved maps expire after 7 days).
-   - Open **Share** for more control: **Update This Link** overwrites the currently open save, **Save as New Link** always creates a brand-new independent code (so you can keep multiple separate saved maps without one overwriting another), and **Load by Code** opens any map by its 4-character code.
-   - Visiting the bare root URL (no code) always starts a fresh, unsaved canvas.
+5. **Save your work.** Click **Save** in the toolbar for a dropdown with three options:
+   - **Save** — persists immediately to whichever link is currently open, or creates a new one if you haven't saved yet. The map's 4-character code becomes part of the URL (e.g. `netmap.packnation.org/ab3d`).
+   - **Save as New Link** — always creates a brand-new, independent code, leaving whatever was previously saved under the old code untouched — this is how you keep multiple separate saved maps without one overwriting another.
+   - **Load by Code** — opens any previously saved map by its 4-character code.
+
+   Visiting the bare root URL (no code) always starts a fresh, unsaved canvas. Saved maps expire after 7 days. Once something's saved, click **Share** to copy the current link to your clipboard.
 6. **Export.** Use **PNG**/**SVG** for an image of the diagram, or **Export**/**Import** for the raw JSON document (handy for backups or editing outside the app).
 
 ## Building for production
@@ -75,5 +77,5 @@ If you're tunneling the dev server (e.g. via Cloudflare Tunnel) under a custom h
 - **Tidy** — auto-layout via Dagre; the viewport re-fits automatically afterward.
 - **Export** — PNG, SVG, or JSON.
 - **Import JSON** — reload a previously exported `.json` map.
-- **Save** — one-click save to the currently open link (or create one) right from the toolbar.
-- **Share** — save the current map and get a 4-character code that lives in the URL (`netmap.packnation.org/<code>`); update an existing link, save as a brand-new independent link, or load any map by code (see backend setup above).
+- **Save** — toolbar dropdown for Save, Save as New Link, and Load by Code; the active code lives in the URL (`netmap.packnation.org/<code>`) (see backend setup above).
+- **Share** — one click to copy the current map's link to your clipboard.
