@@ -33,9 +33,14 @@ export function splitIntoBlocks(rawInput: string): string[] {
   return blocks;
 }
 
+const VYOS_TABLE_ROW_RE = /^\S+\s+(?:-|[0-9A-Fa-f.:]+\/\d{1,3})\s+[uUdDaA]\/[uUdDaA]\s*.*$/m;
+
 export function detectFormat(block: string): DetectedFormat {
   if (/show\s+int\b/i.test(block) || /^Codes:\s*S\s*-\s*State/im.test(block)) return 'vyos-show-int';
   if (/\bip\s+a(?:ddr)?\b/i.test(block) || /^\s*\d+:\s+\S+:\s+<[A-Z,_]+>/m.test(block)) return 'linux-ip-a';
+  // No command echo or header — fall back to recognizing bare interface-table rows
+  // (e.g. "eth0  10.0.0.1/24  u/u  description" or "eth1  -  d/d").
+  if (VYOS_TABLE_ROW_RE.test(block)) return 'vyos-show-int';
   return 'unknown';
 }
 
@@ -65,14 +70,14 @@ function parseVyosShowInt(block: string): RawIfaceRow[] {
     if (/^vyos@|^Codes:|^Interface\s+IP Address/i.test(trimmed)) continue;
     if (VYOS_PROMPT_RE.test(trimmed)) continue;
 
-    const full = trimmed.match(/^(\S+)\s+([0-9A-Fa-f.:]+\/\d{1,3})\s+([uUdDaA]\/[uUdDaA])\s*(.*)$/);
+    const full = trimmed.match(/^(\S+)\s+(-|[0-9A-Fa-f.:]+\/\d{1,3})\s+([uUdDaA]\/[uUdDaA])\s*(.*)$/);
     if (full) {
       currentName = full[1];
       rows.push({ name: full[1], address: full[2], stateCode: full[3], description: full[4].trim() });
       continue;
     }
 
-    const cont = trimmed.match(/^([0-9A-Fa-f.:]+\/\d{1,3})\s*$/);
+    const cont = trimmed.match(/^(-|[0-9A-Fa-f.:]+\/\d{1,3})\s*$/);
     if (cont && currentName) {
       rows.push({ name: currentName, address: cont[1] });
     }

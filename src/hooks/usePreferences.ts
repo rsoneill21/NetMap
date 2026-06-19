@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { PreferencesContext, type PreferencesContextValue } from '../contexts/preferencesContext';
+import { PreferencesContext, type PreferencesContextValue } from '../contexts/preferencesContextDefinition';
 
 export function usePreferences(): PreferencesContextValue {
   const ctx = useContext(PreferencesContext);

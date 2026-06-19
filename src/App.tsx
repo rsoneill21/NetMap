@@ -5,6 +5,7 @@ import { DevicePalette } from './components/DevicePalette';
 import { Canvas } from './components/Canvas';
 import { InspectorPanel } from './components/InspectorPanel';
 import { ImportModal } from './components/ImportModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { useNetMapState } from './hooks/useNetMapState';
 import { exportCanvasAsPng, exportCanvasAsSvg } from './lib/exportImage';
 import { PreferencesProvider } from './contexts/PreferencesContext';
@@ -14,6 +15,7 @@ import './styles/app.css';
 function App() {
   const state = useNetMapState();
   const [importOpen, setImportOpen] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   async function handleShare() {
     if (!state.shareCode) {
@@ -54,7 +56,7 @@ function App() {
             onExportJson={state.exportJson}
             onImportJson={state.importJson}
             onRelinkSubnets={state.relinkSubnets}
-            onClear={state.clearAll}
+            onClear={() => setClearConfirmOpen(true)}
             statusMessage={state.statusMessage}
           />
           <div className="app-body">
@@ -78,6 +80,16 @@ function App() {
         </div>
         {importOpen && (
           <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />
+        )}
+        {clearConfirmOpen && (
+          <ConfirmModal
+            message="Clear the entire map? This cannot be undone."
+            onConfirm={() => {
+              state.clearAll();
+              setClearConfirmOpen(false);
+            }}
+            onCancel={() => setClearConfirmOpen(false)}
+          />
         )}
       </ReactFlowProvider>
     </PreferencesProvider>

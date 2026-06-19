@@ -47,10 +47,16 @@ deleteExpired();
 const app = express();
 app.use(express.json({ limit: '5mb' }));
 
+const CODE_RE = /^[a-z0-9]{4}$/;
+
 app.post('/api/configs', (req, res) => {
   const { code: requestedCode, document } = req.body ?? {};
   if (!document) {
     res.status(400).json({ error: 'document is required' });
+    return;
+  }
+  if (requestedCode && !CODE_RE.test(requestedCode)) {
+    res.status(400).json({ error: 'code must be 4 lowercase alphanumeric characters' });
     return;
   }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { PreferencesContext, type Preferences } from './preferencesContext';
+import { PreferencesContext, type Preferences } from './preferencesContextDefinition';
 
 const STORAGE_KEY = 'netmap.preferences.v1';
 

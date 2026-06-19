@@ -54,12 +54,6 @@ export function Toolbar({
     URL.revokeObjectURL(url);
   }
 
-  function handleClear() {
-    if (window.confirm('Clear the entire map? This cannot be undone.')) {
-      onClear();
-    }
-  }
-
   return (
     <header className="toolbar">
       <div className="toolbar-brand">NetMap</div>
@@ -85,7 +79,7 @@ export function Toolbar({
         <Share2 size={16} /> Share
       </button>
       <SettingsMenu />
-      <button type="button" className="toolbar-btn toolbar-btn-danger" onClick={handleClear} title="Clear map">
+      <button type="button" className="toolbar-btn toolbar-btn-danger" onClick={onClear} title="Clear map">
         <Trash2 size={16} /> Clear
       </button>
     </header>
