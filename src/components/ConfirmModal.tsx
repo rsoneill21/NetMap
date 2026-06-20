@@ -1,13 +1,15 @@
 interface ConfirmModalProps {
+  title?: string;
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function ConfirmModal({ message, onConfirm, onCancel }: ConfirmModalProps) {
+export function ConfirmModal({ title = 'Confirm Action', message, onConfirm, onCancel }: ConfirmModalProps) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal">
+        <h2>{title}</h2>
         <p className="modal-help">{message}</p>
         <div className="modal-actions">
           <button type="button" className="toolbar-btn" onClick={onCancel}>

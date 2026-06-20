@@ -56,6 +56,16 @@ export function useNetMapState() {
     return () => clearTimeout(timer);
   }, [nodes, edges]);
 
+  // Once a map has a share code, keep the server copy in sync so it stays the durable
+  // backup — localStorage alone is lost if the browser ever clears site data.
+  useEffect(() => {
+    if (!shareCode) return;
+    const timer = setTimeout(() => {
+      saveShare(buildDocument(nodes, edges), shareCode).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [nodes, edges, shareCode]);
+
   const onNodesChange = useCallback((changes: NodeChange<DeviceNode>[]) => {
     setNodes((prev) => applyNodeChanges(changes, prev));
   }, []);

@@ -83,6 +83,7 @@ function App() {
         )}
         {clearConfirmOpen && (
           <ConfirmModal
+            title="Clear Map"
             message="Clear the entire map? This cannot be undone."
             onConfirm={() => {
               state.clearAll();

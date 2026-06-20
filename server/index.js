@@ -5,7 +5,9 @@ import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT ?? 3001;
-const TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_NODES = 1000;
+const MAX_EDGES = 2000;
 const CODE_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
 const db = new DatabaseSync(path.join(__dirname, 'share-codes.db'));
@@ -59,6 +61,10 @@ app.post('/api/configs', (req, res) => {
     res.status(400).json({ error: 'code must be 4 lowercase alphanumeric characters' });
     return;
   }
+  if ((document.nodes?.length ?? 0) > MAX_NODES || (document.edges?.length ?? 0) > MAX_EDGES) {
+    res.status(400).json({ error: `document exceeds limits (${MAX_NODES} nodes / ${MAX_EDGES} edges max)` });
+    return;
+  }
 
   deleteExpired();
   const documentJson = JSON.stringify(document);
@@ -89,7 +95,11 @@ app.get('/api/configs/:code', (req, res) => {
     res.status(404).json({ error: 'not found' });
     return;
   }
-  res.json({ document: JSON.parse(row.document), expiresAt: new Date(row.expires_at).toISOString() });
+  // Loading a map counts as activity — push its expiry back out so maps
+  // people keep coming back to never silently disappear.
+  const expiresAt = Date.now() + TTL_MS;
+  db.prepare('UPDATE share_codes SET expires_at = ? WHERE code = ?').run(expiresAt, row.code);
+  res.json({ document: JSON.parse(row.document), expiresAt: new Date(expiresAt).toISOString() });
 });
 
 app.listen(PORT, () => {
