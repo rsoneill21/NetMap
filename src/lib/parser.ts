@@ -191,6 +191,9 @@ export function parseAndCreateDevices(rawInput: string): ParseResult {
 
     const type = detectDeviceType(format, interfaces);
     const label = detectLabel(block, format, `device-${index + 1}`);
+    if (interfaces.length > 0) {
+      interfaces[0].isManagement = true;
+    }
     devices.push({
       id: `${label}-${Date.now()}-${index}-${Math.floor(Math.random() * 1e6)}`,
       label,

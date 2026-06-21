@@ -75,6 +75,7 @@ function App() {
               selectedEdge={selectedEdge}
               onUpdateDevice={state.updateDevice}
               onDeleteSelected={state.deleteSelected}
+              onClose={() => state.setSelectedId(null)}
             />
           </div>
         </div>

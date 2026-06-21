@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Star, Trash2 } from 'lucide-react';
 import { parseCidrToken, formatIpAddress } from '../lib/cidr';
 import type { InterfaceStatus, NetInterface } from '../types';
 
@@ -6,18 +7,27 @@ interface InterfaceEditorRowProps {
   iface: NetInterface;
   onChange: (next: NetInterface) => void;
   onRemove: () => void;
+  onSetManagement: () => void;
 }
 
 const STATUS_OPTIONS: InterfaceStatus[] = ['up', 'down', 'admin-down', 'unknown'];
 
-export function InterfaceEditorRow({ iface, onChange, onRemove }: InterfaceEditorRowProps) {
+export function InterfaceEditorRow({ iface, onChange, onRemove, onSetManagement }: InterfaceEditorRowProps) {
   const [addressesText, setAddressesText] = useState(() =>
     iface.addresses.map(formatIpAddress).join(', '),
   );
 
   return (
-    <div className="iface-editor-row">
+    <div className={`iface-editor-row${iface.isManagement ? ' is-management' : ''}`}>
       <div className="iface-editor-line">
+        <button
+          type="button"
+          className={`iface-star-btn${iface.isManagement ? ' is-active' : ''}`}
+          onClick={onSetManagement}
+          title={iface.isManagement ? 'Management interface' : 'Set as management interface'}
+        >
+          <Star size={14} fill={iface.isManagement ? 'currentColor' : 'none'} />
+        </button>
         <input
           className="iface-editor-name"
           value={iface.name}
@@ -35,9 +45,14 @@ export function InterfaceEditorRow({ iface, onChange, onRemove }: InterfaceEdito
           ))}
         </select>
         <button type="button" className="icon-btn-danger" onClick={onRemove} title="Remove interface">
-          ×
+          <Trash2 size={14} />
         </button>
       </div>
+      {iface.isManagement && (
+        <div className="iface-management-caption">
+          <Star size={11} fill="currentColor" /> Management interface — IP used for SSH/access
+        </div>
+      )}
       <input
         className="iface-editor-addresses"
         value={addressesText}

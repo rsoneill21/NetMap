@@ -87,8 +87,8 @@ export function Canvas({
         minZoom={0.1}
         maxZoom={2.5}
       >
-        <Background id="minor" variant={BackgroundVariant.Lines} gap={20} lineWidth={1} color="var(--bp-grid-minor)" />
-        <Background id="major" variant={BackgroundVariant.Lines} gap={100} lineWidth={1} color="var(--bp-grid-major)" />
+        <Background id="dots" variant={BackgroundVariant.Dots} gap={24} size={1.5} color="var(--bp-grid-dot)" />
+        <Background id="major" variant={BackgroundVariant.Lines} gap={120} lineWidth={1} color="var(--bp-grid-major)" />
         <Controls />
         <MiniMap
           pannable

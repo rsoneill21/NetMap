@@ -19,6 +19,7 @@ export interface NetInterface {
   description: string;
   status: InterfaceStatus;
   macAddress?: string;
+  isManagement?: boolean;
 }
 
 export interface Device {

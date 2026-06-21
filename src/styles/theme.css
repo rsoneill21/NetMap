@@ -9,11 +9,14 @@
   --bp-cyan-hover: rgba(56, 189, 248, 0.08);
   --bp-cyan-active: rgba(56, 189, 248, 0.15);
   --bp-cyan-faint: rgba(56, 189, 248, 0.04);
-  --bp-grid-minor: rgba(56, 189, 248, 0.12);
-  --bp-grid-major: rgba(56, 189, 248, 0.28);
+  --bp-grid-dot: rgba(148, 163, 184, 0.18);
+  --bp-grid-major: rgba(148, 163, 184, 0.07);
   --bp-white: #e8f4fb;
   --bp-amber: #fbbf24;
   --bp-red: #f87171;
+  --bp-green: #4ade80;
+  --bp-green-dim: rgba(74, 222, 128, 0.35);
+  --bp-green-faint: rgba(74, 222, 128, 0.08);
   --bp-line-width: 1.25px;
   --bp-text-muted: rgba(125, 211, 252, 0.6);
   --bp-backdrop: rgba(7, 16, 41, 0.55);
@@ -30,37 +33,53 @@
   --bp-cyan-hover: rgba(2, 132, 199, 0.08);
   --bp-cyan-active: rgba(2, 132, 199, 0.15);
   --bp-cyan-faint: rgba(2, 132, 199, 0.04);
-  --bp-grid-minor: rgba(2, 132, 199, 0.12);
-  --bp-grid-major: rgba(2, 132, 199, 0.28);
+  --bp-grid-dot: rgba(100, 116, 139, 0.28);
+  --bp-grid-major: rgba(100, 116, 139, 0.1);
   --bp-white: #0f172a;
   --bp-amber: #b45309;
   --bp-red: #dc2626;
+  --bp-green: #16a34a;
+  --bp-green-dim: rgba(22, 163, 74, 0.35);
+  --bp-green-faint: rgba(22, 163, 74, 0.06);
   --bp-text-muted: rgba(3, 105, 161, 0.65);
   --bp-backdrop: rgba(15, 23, 42, 0.4);
 }
 
 .device-node {
   background: var(--bp-node-bg);
-  border: var(--bp-line-width) solid var(--bp-cyan);
-  border-radius: 3px;
+  border: var(--bp-line-width) solid var(--bp-cyan-dim);
+  border-radius: 4px;
   color: var(--bp-white);
   font-family: 'JetBrains Mono', monospace;
   box-shadow: none;
   min-width: 200px;
   font-size: 11px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+@keyframes selection-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--bp-cyan-bright), 0 0 12px var(--bp-cyan-hover);
+  }
+  50% {
+    box-shadow: 0 0 0 1px var(--bp-cyan-bright), 0 0 18px var(--bp-cyan-active);
+  }
 }
 
 .device-node.is-selected {
-  border-color: var(--bp-cyan-bright);
-  box-shadow: 0 0 0 1px var(--bp-cyan-bright);
+  border: var(--bp-line-width) dashed var(--bp-cyan-bright);
+  animation: selection-glow 1.8s ease-in-out infinite;
 }
 
 .device-node-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--bp-cyan-dim);
+  padding: 7px 8px;
+  border-bottom: 2px solid var(--bp-cyan-dim);
+  border-radius: 3px 3px 0 0;
+  background: var(--bp-cyan-faint);
 }
 
 .device-node-icon {
@@ -69,7 +88,7 @@
 }
 
 .device-node-label {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--bp-white);
   flex: 1;
   text-align: left;
@@ -80,9 +99,11 @@
 
 .device-node-type {
   font-size: 9px;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--bp-text-muted);
+  flex-shrink: 0;
 }
 
 .device-node-interfaces {
