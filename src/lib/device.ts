@@ -2,7 +2,7 @@ import { Router, Network, Monitor, Server, ShieldAlert, Cloud, type LucideIcon }
 import type { Device, DeviceType, NetInterface } from '../types';
 
 let idCounter = 0;
-function nextId(prefix: string): string {
+export function nextId(prefix: string): string {
   idCounter += 1;
   return `${prefix}-${idCounter}-${Math.floor(Math.random() * 1e6)}`;
 }

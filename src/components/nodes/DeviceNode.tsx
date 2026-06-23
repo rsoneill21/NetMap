@@ -1,6 +1,8 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Cable } from 'lucide-react';
 import { deviceTypeMeta } from '../../lib/device';
 import { formatIpAddress } from '../../lib/cidr';
+import { useDeviceActions } from '../../hooks/useDeviceActions';
 import type { DeviceNode as DeviceNodeType } from '../../types';
 
 function statusDotClass(status: string): string {
@@ -13,6 +15,7 @@ function statusDotClass(status: string): string {
 export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
   const meta = deviceTypeMeta[data.type];
   const Icon = meta.icon;
+  const { onStartTunnel } = useDeviceActions();
 
   return (
     <div className={`device-node${selected ? ' is-selected' : ''}`}>
@@ -20,6 +23,17 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
         <Icon size={16} className="device-node-icon" />
         <span className="device-node-label">{data.label}</span>
         <span className="device-node-type">{meta.label}</span>
+        <button
+          type="button"
+          className="device-node-tunnel-btn nodrag"
+          title="Start a tunnel from this device"
+          onClick={(e) => {
+            e.stopPropagation();
+            onStartTunnel(data.id);
+          }}
+        >
+          <Cable size={13} />
+        </button>
       </div>
       <div className="device-node-interfaces">
         {data.interfaces.map((iface) => (

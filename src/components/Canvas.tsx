@@ -12,20 +12,22 @@ import {
 } from '@xyflow/react';
 import { DeviceNode } from './nodes/DeviceNode';
 import { DeviceEdge } from './edges/DeviceEdge';
+import { TunnelHopEdge } from './edges/TunnelHopEdge';
 import { SubnetGroupOverlay } from './SubnetGroupOverlay';
-import type { DeviceEdge as DeviceEdgeType, DeviceNode as DeviceNodeType, DeviceType } from '../types';
+import type { CanvasEdge, DeviceNode as DeviceNodeType, DeviceType } from '../types';
 import type { NodeChange, EdgeChange } from '@xyflow/react';
 
 const nodeTypes = { deviceNode: DeviceNode };
-const edgeTypes = { deviceEdge: DeviceEdge };
+const edgeTypes = { deviceEdge: DeviceEdge, tunnelHopEdge: TunnelHopEdge };
 
 interface CanvasProps {
   nodes: DeviceNodeType[];
-  edges: DeviceEdgeType[];
+  edges: CanvasEdge[];
   onNodesChange: (changes: NodeChange<DeviceNodeType>[]) => void;
-  onEdgesChange: (changes: EdgeChange<DeviceEdgeType>[]) => void;
+  onEdgesChange: (changes: EdgeChange<CanvasEdge>[]) => void;
   onConnect: OnConnect;
   onSelect: (id: string | null) => void;
+  onSelectTunnel: (tunnelId: string) => void;
   onAddDeviceAt: (type: DeviceType, position: { x: number; y: number }) => void;
 }
 
@@ -36,6 +38,7 @@ export function Canvas({
   onEdgesChange,
   onConnect,
   onSelect,
+  onSelectTunnel,
   onAddDeviceAt,
 }: CanvasProps) {
   const { screenToFlowPosition } = useReactFlow();
@@ -45,9 +48,15 @@ export function Canvas({
     [onSelect],
   );
 
-  const handleEdgeClick: EdgeMouseHandler<DeviceEdgeType> = useCallback(
-    (_e, edge) => onSelect(edge.id),
-    [onSelect],
+  const handleEdgeClick: EdgeMouseHandler<CanvasEdge> = useCallback(
+    (_e, edge) => {
+      if (edge.type === 'tunnelHopEdge' && edge.data?.tunnelId) {
+        onSelectTunnel(edge.data.tunnelId);
+        return;
+      }
+      onSelect(edge.id);
+    },
+    [onSelect, onSelectTunnel],
   );
 
   const handlePaneClick = useCallback(() => onSelect(null), [onSelect]);

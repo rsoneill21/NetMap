@@ -1,14 +1,20 @@
-import { useMemo, useState } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
+import { useCallback, useMemo, useState } from 'react';
+import { ReactFlowProvider, type EdgeChange } from '@xyflow/react';
 import { Toolbar } from './components/Toolbar';
 import { DevicePalette } from './components/DevicePalette';
 import { Canvas } from './components/Canvas';
 import { InspectorPanel } from './components/InspectorPanel';
 import { ImportModal } from './components/ImportModal';
 import { ConfirmModal } from './components/ConfirmModal';
+import { TunnelWizardModal } from './components/TunnelWizardModal';
+import { TunnelCommandImportModal } from './components/TunnelCommandImportModal';
+import { TunnelCommandsModal } from './components/TunnelCommandsModal';
 import { useNetMapState } from './hooks/useNetMapState';
 import { exportCanvasAsPng, exportCanvasAsSvg } from './lib/exportImage';
+import { buildTunnelEdges } from './lib/tunnel';
 import { PreferencesProvider } from './contexts/PreferencesContext';
+import { DeviceActionsContext } from './contexts/deviceActionsContextDefinition';
+import type { CanvasEdge, DeviceEdge } from './types';
 import './styles/theme.css';
 import './styles/app.css';
 
@@ -16,6 +22,24 @@ function App() {
   const state = useNetMapState();
   const [importOpen, setImportOpen] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [tunnelWizardOpen, setTunnelWizardOpen] = useState(false);
+  const [tunnelCommandImportOpen, setTunnelCommandImportOpen] = useState(false);
+  const [tunnelCommandAnchorId, setTunnelCommandAnchorId] = useState<string | null>(null);
+
+  const deviceActions = useMemo(
+    () => ({
+      onStartTunnel: (deviceId: string) => {
+        setTunnelCommandAnchorId(deviceId);
+        setTunnelCommandImportOpen(true);
+      },
+    }),
+    [],
+  );
+
+  const tunnelCommandAnchorDevice = useMemo(
+    () => state.nodes.find((n) => n.id === tunnelCommandAnchorId) ?? undefined,
+    [state.nodes, tunnelCommandAnchorId],
+  );
 
   async function handleShare() {
     if (!state.shareCode) {
@@ -40,8 +64,49 @@ function App() {
     [state.edges, state.selectedId],
   );
 
+  const tunnelEdges = useMemo(() => buildTunnelEdges(state.tunnels), [state.tunnels]);
+  const canvasEdges: CanvasEdge[] = useMemo(() => {
+    const highlightedTunnelEdges: CanvasEdge[] = tunnelEdges.map((e) => ({
+      ...e,
+      selected: e.data?.tunnelId === state.selectedTunnelId,
+    }));
+    return [...highlightedTunnelEdges, ...state.edges];
+  }, [tunnelEdges, state.edges, state.selectedTunnelId]);
+
+  const selectedTunnel = useMemo(
+    () => state.tunnels.find((t) => t.id === state.selectedTunnelId) ?? null,
+    [state.tunnels, state.selectedTunnelId],
+  );
+
+  const handleSelect = useCallback(
+    (id: string | null) => {
+      state.setSelectedId(id);
+      state.setSelectedTunnelId(null);
+    },
+    [state],
+  );
+
+  const handleSelectTunnel = useCallback(
+    (tunnelId: string) => {
+      state.setSelectedTunnelId(tunnelId);
+      state.setSelectedId(null);
+    },
+    [state],
+  );
+
+  const handleCanvasEdgesChange = useCallback(
+    (changes: EdgeChange<CanvasEdge>[]) => {
+      const physicalChanges = changes.filter(
+        (c) => !('id' in c) || !c.id.startsWith('tunnel-edge-'),
+      ) as EdgeChange<DeviceEdge>[];
+      state.onEdgesChange(physicalChanges);
+    },
+    [state],
+  );
+
   return (
     <PreferencesProvider>
+      <DeviceActionsContext.Provider value={deviceActions}>
       <ReactFlowProvider>
         <div className="app-shell">
           <Toolbar
@@ -56,6 +121,11 @@ function App() {
             onExportJson={state.exportJson}
             onImportJson={state.importJson}
             onRelinkSubnets={state.relinkSubnets}
+            onNewTunnel={() => setTunnelWizardOpen(true)}
+            onNewTunnelFromCommands={() => {
+              setTunnelCommandAnchorId(null);
+              setTunnelCommandImportOpen(true);
+            }}
             onClear={() => setClearConfirmOpen(true)}
             statusMessage={state.statusMessage}
           />
@@ -63,11 +133,12 @@ function App() {
             <DevicePalette onAddDevice={(type) => state.addDevice(type)} />
             <Canvas
               nodes={state.nodes}
-              edges={state.edges}
+              edges={canvasEdges}
               onNodesChange={state.onNodesChange}
-              onEdgesChange={state.onEdgesChange}
+              onEdgesChange={handleCanvasEdgesChange}
               onConnect={state.onConnect}
-              onSelect={state.setSelectedId}
+              onSelect={handleSelect}
+              onSelectTunnel={handleSelectTunnel}
               onAddDeviceAt={(type, position) => state.addDevice(type, position)}
             />
             <InspectorPanel
@@ -82,6 +153,34 @@ function App() {
         {importOpen && (
           <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />
         )}
+        {tunnelWizardOpen && (
+          <TunnelWizardModal
+            nodes={state.nodes}
+            existingTunnels={state.tunnels}
+            physicalEdges={state.edges}
+            onCreate={state.addTunnel}
+            onClose={() => setTunnelWizardOpen(false)}
+          />
+        )}
+        {tunnelCommandImportOpen && (
+          <TunnelCommandImportModal
+            nodes={state.nodes}
+            anchorDevice={tunnelCommandAnchorDevice}
+            onCreate={state.addTunnel}
+            onClose={() => {
+              setTunnelCommandImportOpen(false);
+              setTunnelCommandAnchorId(null);
+            }}
+          />
+        )}
+        {selectedTunnel && (
+          <TunnelCommandsModal
+            tunnel={selectedTunnel}
+            nodes={state.nodes}
+            onDelete={() => state.deleteTunnel(selectedTunnel.id)}
+            onClose={() => state.setSelectedTunnelId(null)}
+          />
+        )}
         {clearConfirmOpen && (
           <ConfirmModal
             title="Clear Map"
@@ -94,6 +193,7 @@ function App() {
           />
         )}
       </ReactFlowProvider>
+      </DeviceActionsContext.Provider>
     </PreferencesProvider>
   );
 }

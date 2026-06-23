@@ -53,10 +53,51 @@ export interface SubnetGroup {
   label: string;
 }
 
+export type HopProtocol = 'ssh' | 'telnet';
+
+export interface TunnelHop {
+  id: string;
+  fromDeviceId: string;
+  toDeviceId: string;
+  protocol: HopProtocol;
+  username?: string;
+}
+
+export type PortForwardType = 'local' | 'remote' | 'dynamic';
+
+export interface PortMapping {
+  id: string;
+  type: PortForwardType;
+  localPort?: number;
+  remoteHost?: string;
+  remotePort?: number;
+}
+
+export interface TunnelData {
+  id: string;
+  label?: string;
+  hops: TunnelHop[];
+  forwardingHopId: string;
+  portMappings: PortMapping[];
+}
+
+export interface TunnelHopEdgeData {
+  tunnelId: string;
+  hopIndex: number;
+  protocol: HopProtocol;
+  isForwardingHop: boolean;
+  portSummary?: string;
+}
+export type TunnelHopEdgeFlowData = TunnelHopEdgeData & Record<string, unknown>;
+export type TunnelHopEdge = Edge<TunnelHopEdgeFlowData, 'tunnelHopEdge'>;
+
+export type CanvasEdge = DeviceEdge | TunnelHopEdge;
+
 export interface NetMapDocument {
   version: 1;
   nodes: DeviceNode[];
   edges: DeviceEdge[];
+  tunnels: TunnelData[];
   createdAt: string;
   updatedAt: string;
 }

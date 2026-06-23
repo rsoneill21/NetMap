@@ -1,12 +1,14 @@
-import { ChevronDown, LayoutGrid, RefreshCw } from 'lucide-react';
+import { ChevronDown, LayoutGrid, RefreshCw, Cable, Terminal } from 'lucide-react';
 import { useDropdown } from '../hooks/useDropdown';
 
 interface EditMenuProps {
   onTidy: () => void;
   onRelinkSubnets: () => void;
+  onNewTunnel: () => void;
+  onNewTunnelFromCommands: () => void;
 }
 
-export function EditMenu({ onTidy, onRelinkSubnets }: EditMenuProps) {
+export function EditMenu({ onTidy, onRelinkSubnets, onNewTunnel, onNewTunnelFromCommands }: EditMenuProps) {
   const { open, setOpen, rootRef } = useDropdown();
 
   return (
@@ -35,6 +37,26 @@ export function EditMenu({ onTidy, onRelinkSubnets }: EditMenuProps) {
             }}
           >
             <RefreshCw size={14} /> Re-link Subnets
+          </button>
+          <button
+            type="button"
+            className="toolbar-menu-item"
+            onClick={() => {
+              onNewTunnel();
+              setOpen(false);
+            }}
+          >
+            <Cable size={14} /> New Tunnel...
+          </button>
+          <button
+            type="button"
+            className="toolbar-menu-item"
+            onClick={() => {
+              onNewTunnelFromCommands();
+              setOpen(false);
+            }}
+          >
+            <Terminal size={14} /> New Tunnel from Commands...
           </button>
         </div>
       )}

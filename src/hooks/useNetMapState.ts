@@ -20,7 +20,7 @@ import {
 } from '../lib/storage';
 import { saveShare, loadShare, codeFromUrl, setUrlCode } from '../lib/share';
 import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr } from '../lib/subnet';
-import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface } from '../types';
+import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface, TunnelData } from '../types';
 
 function findInterface(nodes: DeviceNode[], nodeId: string | null | undefined, handleId: string | null | undefined): NetInterface | null {
   if (!nodeId || !handleId) return null;
@@ -46,25 +46,27 @@ export function useNetMapState() {
   const initial = loadDocument();
   const [nodes, setNodes] = useState<DeviceNode[]>(initial?.nodes ?? []);
   const [edges, setEdges] = useState<DeviceEdge[]>(initial?.edges ?? []);
+  const [tunnels, setTunnels] = useState<TunnelData[]>(initial?.tunnels ?? []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedTunnelId, setSelectedTunnelId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [shareCode, setShareCode] = useState<string | null>(null);
   const nodeCountRef = useRef(nodes.length);
 
   useEffect(() => {
-    const timer = setTimeout(() => saveDocument(nodes, edges), 500);
+    const timer = setTimeout(() => saveDocument(nodes, edges, tunnels), 500);
     return () => clearTimeout(timer);
-  }, [nodes, edges]);
+  }, [nodes, edges, tunnels]);
 
   // Once a map has a share code, keep the server copy in sync so it stays the durable
   // backup — localStorage alone is lost if the browser ever clears site data.
   useEffect(() => {
     if (!shareCode) return;
     const timer = setTimeout(() => {
-      saveShare(buildDocument(nodes, edges), shareCode).catch(() => {});
+      saveShare(buildDocument(nodes, edges, tunnels), shareCode).catch(() => {});
     }, 2000);
     return () => clearTimeout(timer);
-  }, [nodes, edges, shareCode]);
+  }, [nodes, edges, tunnels, shareCode]);
 
   const onNodesChange = useCallback((changes: NodeChange<DeviceNode>[]) => {
     setNodes((prev) => applyNodeChanges(changes, prev));
@@ -136,8 +138,23 @@ export function useNetMapState() {
     if (!selectedId) return;
     setNodes((prev) => prev.filter((n) => n.id !== selectedId));
     setEdges((prev) => prev.filter((e) => e.source !== selectedId && e.target !== selectedId && e.id !== selectedId));
+    setTunnels((prev) => prev.filter((t) => !t.hops.some((h) => h.fromDeviceId === selectedId || h.toDeviceId === selectedId)));
     setSelectedId(null);
   }, [selectedId]);
+
+  const addTunnel = useCallback((tunnel: TunnelData) => {
+    setTunnels((prev) => [...prev, tunnel]);
+    setSelectedTunnelId(tunnel.id);
+  }, []);
+
+  const updateTunnel = useCallback((tunnelId: string, updater: (tunnel: TunnelData) => TunnelData) => {
+    setTunnels((prev) => prev.map((t) => (t.id === tunnelId ? updater(t) : t)));
+  }, []);
+
+  const deleteTunnel = useCallback((tunnelId: string) => {
+    setTunnels((prev) => prev.filter((t) => t.id !== tunnelId));
+    setSelectedTunnelId((prev) => (prev === tunnelId ? null : prev));
+  }, []);
 
   const relinkSubnets = useCallback(() => {
     setNodes((currentNodes) => {
@@ -182,14 +199,16 @@ export function useNetMapState() {
   const clearAll = useCallback(() => {
     setNodes([]);
     setEdges([]);
+    setTunnels([]);
     setSelectedId(null);
+    setSelectedTunnelId(null);
     nodeCountRef.current = 0;
     clearDocument();
     setShareCode(null);
     setUrlCode(null);
   }, []);
 
-  const exportJson = useCallback(() => serializeForExport(nodes, edges), [nodes, edges]);
+  const exportJson = useCallback(() => serializeForExport(nodes, edges, tunnels), [nodes, edges, tunnels]);
 
   const importJson = useCallback((raw: string) => {
     const doc = parseImportedJson(raw);
@@ -199,15 +218,17 @@ export function useNetMapState() {
     }
     setNodes(doc.nodes);
     setEdges(doc.edges);
+    setTunnels(doc.tunnels);
     nodeCountRef.current = doc.nodes.length;
     setSelectedId(null);
+    setSelectedTunnelId(null);
     setStatusMessage(`Loaded ${doc.nodes.length} device(s) from file.`);
     return true;
   }, []);
 
   const saveShareLink = useCallback(async () => {
     try {
-      const doc = buildDocument(nodes, edges);
+      const doc = buildDocument(nodes, edges, tunnels);
       const result = await saveShare(doc, shareCode);
       setShareCode(result.code);
       setUrlCode(result.code);
@@ -217,13 +238,13 @@ export function useNetMapState() {
       setStatusMessage('Failed to save share code — is the server running?');
       return null;
     }
-  }, [nodes, edges, shareCode]);
+  }, [nodes, edges, tunnels, shareCode]);
 
   // Always requests a brand-new code, leaving whatever is currently saved under the old
   // code (if any) untouched — this is how you get a second/third/etc. independent saved map.
   const saveAsNewShareLink = useCallback(async () => {
     try {
-      const doc = buildDocument(nodes, edges);
+      const doc = buildDocument(nodes, edges, tunnels);
       const result = await saveShare(doc, null);
       setShareCode(result.code);
       setUrlCode(result.code);
@@ -232,7 +253,7 @@ export function useNetMapState() {
       setStatusMessage('Failed to save share code — is the server running?');
       return null;
     }
-  }, [nodes, edges]);
+  }, [nodes, edges, tunnels]);
 
   const loadShareLink = useCallback(async (code: string) => {
     const normalized = code.trim().toLowerCase();
@@ -244,8 +265,10 @@ export function useNetMapState() {
       }
       setNodes(result.document.nodes);
       setEdges(result.document.edges);
+      setTunnels(result.document.tunnels ?? []);
       nodeCountRef.current = result.document.nodes.length;
       setSelectedId(null);
+      setSelectedTunnelId(null);
       setShareCode(normalized);
       setUrlCode(normalized);
       setStatusMessage(`Loaded configuration "${normalized}".`);
@@ -274,10 +297,13 @@ export function useNetMapState() {
   return {
     nodes,
     edges,
+    tunnels,
     selectedId,
+    selectedTunnelId,
     statusMessage,
     shareCode,
     setSelectedId,
+    setSelectedTunnelId,
     setStatusMessage,
     onNodesChange,
     onEdgesChange,
@@ -294,5 +320,8 @@ export function useNetMapState() {
     saveShareLink,
     saveAsNewShareLink,
     loadShareLink,
+    addTunnel,
+    updateTunnel,
+    deleteTunnel,
   };
 }

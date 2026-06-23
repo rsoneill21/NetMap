@@ -17,6 +17,8 @@
   --bp-green: #4ade80;
   --bp-green-dim: rgba(74, 222, 128, 0.35);
   --bp-green-faint: rgba(74, 222, 128, 0.08);
+  --bp-purple: #a78bfa;
+  --bp-purple-bright: #c4b5fd;
   --bp-line-width: 1.25px;
   --bp-text-muted: rgba(125, 211, 252, 0.6);
   --bp-backdrop: rgba(7, 16, 41, 0.55);
@@ -41,6 +43,8 @@
   --bp-green: #16a34a;
   --bp-green-dim: rgba(22, 163, 74, 0.35);
   --bp-green-faint: rgba(22, 163, 74, 0.06);
+  --bp-purple: #7c3aed;
+  --bp-purple-bright: #6d28d9;
   --bp-text-muted: rgba(3, 105, 161, 0.65);
   --bp-backdrop: rgba(15, 23, 42, 0.4);
 }
@@ -104,6 +108,32 @@
   letter-spacing: 0.06em;
   color: var(--bp-text-muted);
   flex-shrink: 0;
+}
+
+.device-node-tunnel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--bp-purple-bright);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.device-node:hover .device-node-tunnel-btn,
+.device-node-tunnel-btn:focus-visible {
+  opacity: 1;
+}
+
+.device-node-tunnel-btn:hover {
+  background: var(--bp-cyan-hover);
 }
 
 .device-node-interfaces {

@@ -1,4 +1,4 @@
-import type { DeviceEdge, DeviceNode, NetMapDocument } from '../types';
+import type { DeviceEdge, DeviceNode, NetMapDocument, TunnelData } from '../types';
 
 const STORAGE_KEY = 'netmap.document.v1';
 
@@ -8,18 +8,19 @@ export function loadDocument(): NetMapDocument | null {
   try {
     const parsed = JSON.parse(raw) as NetMapDocument;
     if (parsed.version !== 1) return null;
-    return parsed;
+    return { ...parsed, tunnels: parsed.tunnels ?? [] };
   } catch {
     return null;
   }
 }
 
-export function saveDocument(nodes: DeviceNode[], edges: DeviceEdge[]): void {
+export function saveDocument(nodes: DeviceNode[], edges: DeviceEdge[], tunnels: TunnelData[]): void {
   const existing = loadDocument();
   const doc: NetMapDocument = {
     version: 1,
     nodes,
     edges,
+    tunnels,
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -30,25 +31,26 @@ export function clearDocument(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function buildDocument(nodes: DeviceNode[], edges: DeviceEdge[]): NetMapDocument {
+export function buildDocument(nodes: DeviceNode[], edges: DeviceEdge[], tunnels: TunnelData[]): NetMapDocument {
   return {
     version: 1,
     nodes,
     edges,
+    tunnels,
     createdAt: loadDocument()?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 }
 
-export function serializeForExport(nodes: DeviceNode[], edges: DeviceEdge[]): string {
-  return JSON.stringify(buildDocument(nodes, edges), null, 2);
+export function serializeForExport(nodes: DeviceNode[], edges: DeviceEdge[], tunnels: TunnelData[]): string {
+  return JSON.stringify(buildDocument(nodes, edges, tunnels), null, 2);
 }
 
 export function parseImportedJson(raw: string): NetMapDocument | null {
   try {
     const parsed = JSON.parse(raw) as NetMapDocument;
     if (parsed.version !== 1 || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) return null;
-    return parsed;
+    return { ...parsed, tunnels: parsed.tunnels ?? [] };
   } catch {
     return null;
   }

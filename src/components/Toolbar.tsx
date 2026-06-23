@@ -17,6 +17,8 @@ interface ToolbarProps {
   onExportJson: () => string;
   onImportJson: (raw: string) => void;
   onRelinkSubnets: () => void;
+  onNewTunnel: () => void;
+  onNewTunnelFromCommands: () => void;
   onClear: () => void;
   statusMessage: string | null;
 }
@@ -33,6 +35,8 @@ export function Toolbar({
   onExportJson,
   onImportJson,
   onRelinkSubnets,
+  onNewTunnel,
+  onNewTunnelFromCommands,
   onClear,
   statusMessage,
 }: ToolbarProps) {
@@ -74,7 +78,12 @@ export function Toolbar({
         onExportPng={onExportPng}
         onExportSvg={onExportSvg}
       />
-      <EditMenu onTidy={handleTidy} onRelinkSubnets={onRelinkSubnets} />
+      <EditMenu
+        onTidy={handleTidy}
+        onRelinkSubnets={onRelinkSubnets}
+        onNewTunnel={onNewTunnel}
+        onNewTunnelFromCommands={onNewTunnelFromCommands}
+      />
       <button type="button" className="toolbar-btn" onClick={onShare} title="Copy a shareable link to this map">
         <Share2 size={16} /> Share
       </button>
