@@ -1,5 +1,7 @@
+import { MarkerType } from '@xyflow/react';
 import { nextId } from './device';
 import { areDevicesNetworkConnected } from './network';
+import { computeSubnetBuckets } from './subnet';
 import type { Device, DeviceEdge, DeviceNode, HopProtocol, PortMapping, TunnelData, TunnelHop, TunnelHopEdge } from '../types';
 
 export const DEFAULT_PROXYCHAINS_PORT = 9050;
@@ -48,37 +50,111 @@ export function buildProxychainsSnippet(mapping: PortMapping): string | null {
 
 export interface TunnelCommandBlock {
   hopCommands: { hopId: string; label: string; command: string }[];
-  forwardingCommand: string | null;
+  mappingDescriptions: string[];
   proxychainsLines: string[];
 }
 
 export function buildTunnelCommandBlock(tunnel: TunnelData, nodes: DeviceNode[]): TunnelCommandBlock {
+  const forwardingHop = tunnel.hops.find((h) => h.id === tunnel.forwardingHopId);
+  const fromLabel = forwardingHop ? findDevice(nodes, forwardingHop.fromDeviceId)?.label ?? forwardingHop.fromDeviceId : '';
+  const toLabel = forwardingHop ? findDevice(nodes, forwardingHop.toDeviceId)?.label ?? forwardingHop.toDeviceId : '';
+
   const hopCommands = tunnel.hops.map((hop) => {
     const fromDevice = findDevice(nodes, hop.fromDeviceId);
     const toDevice = findDevice(nodes, hop.toDeviceId);
-    return {
-      hopId: hop.id,
-      label: `${fromDevice?.label ?? hop.fromDeviceId} -> ${toDevice?.label ?? hop.toDeviceId} (${hop.protocol})`,
-      command: buildHopCommand(hop, toDevice),
-    };
+    const isForwardingHop = hop.id === tunnel.forwardingHopId;
+    const label = isForwardingHop
+      ? `${fromDevice?.label ?? hop.fromDeviceId} -> ${toDevice?.label ?? hop.toDeviceId} (${hop.protocol}, forwards ${portMappingSummary(tunnel.portMappings)})`
+      : `${fromDevice?.label ?? hop.fromDeviceId} -> ${toDevice?.label ?? hop.toDeviceId} (${hop.protocol})`;
+    const command = isForwardingHop
+      ? buildForwardingCommand(hop, toDevice, tunnel.portMappings)
+      : buildHopCommand(hop, toDevice);
+    return { hopId: hop.id, label, command };
   });
 
-  const forwardingHop = tunnel.hops.find((h) => h.id === tunnel.forwardingHopId);
-  const forwardingCommand = forwardingHop
-    ? buildForwardingCommand(forwardingHop, findDevice(nodes, forwardingHop.toDeviceId), tunnel.portMappings)
-    : null;
+  const mappingDescriptions = forwardingHop
+    ? tunnel.portMappings.map((m) => describeMapping(m, fromLabel, toLabel))
+    : [];
 
   const proxychainsLines = tunnel.portMappings
     .map((m) => buildProxychainsSnippet(m))
     .filter((line): line is string => line !== null);
 
-  return { hopCommands, forwardingCommand, proxychainsLines };
+  return { hopCommands, mappingDescriptions, proxychainsLines };
 }
 
+/** Compact pairing shown on the canvas tunnel-edge label — both ports, not just one side. */
 export function portMappingSummary(mappings: PortMapping[]): string {
   return mappings
-    .map((m) => (m.type === 'dynamic' ? `-D ${m.localPort ?? '?'}` : m.type === 'local' ? `-L ${m.localPort ?? '?'}` : `-R ${m.remotePort ?? '?'}`))
+    .map((m) => {
+      if (m.type === 'dynamic') return `D ${m.localPort ?? '?'}`;
+      if (m.type === 'local') return `L ${m.localPort ?? '?'}→${m.remotePort ?? '?'}`;
+      return `R ${m.remotePort ?? '?'}→${m.localPort ?? '?'}`;
+    })
     .join(' ');
+}
+
+/** Full human-readable pairing for a mapping, e.g. "jack:2222 → 142.16.8.10:22", for the wizard diagram and modal. */
+export function describeMapping(mapping: PortMapping, fromLabel: string, toLabel: string): string {
+  if (mapping.type === 'dynamic') {
+    return `SOCKS proxy on ${fromLabel}:${mapping.localPort ?? '?'}`;
+  }
+  if (mapping.type === 'local') {
+    const target = mapping.remoteHost || toLabel;
+    return `${fromLabel}:${mapping.localPort ?? '?'} → ${target}:${mapping.remotePort ?? '?'}`;
+  }
+  const target = mapping.remoteHost || fromLabel;
+  return `${toLabel}:${mapping.remotePort ?? '?'} → ${target}:${mapping.localPort ?? '?'}`;
+}
+
+/**
+ * Ports on `deviceId` currently referenced as a forward target by any tunnel's local/remote mapping —
+ * matched by device label, the same convention `portsForMapping`/pivot suggestions already use.
+ */
+export function computeActiveTunnelPorts(deviceId: string, tunnels: TunnelData[], nodes: DeviceNode[]): number[] {
+  const device = findDevice(nodes, deviceId);
+  if (!device) return [];
+  const ports = new Set<number>();
+  for (const tunnel of tunnels) {
+    for (const mapping of tunnel.portMappings) {
+      if (mapping.type === 'dynamic') continue;
+      const targetLabel = mapping.remoteHost?.toLowerCase();
+      const targetPort = mapping.type === 'local' ? mapping.remotePort : mapping.localPort;
+      if (targetLabel && targetLabel === device.label.toLowerCase() && targetPort != null) {
+        ports.add(targetPort);
+      }
+    }
+  }
+  return [...ports];
+}
+
+export interface PivotCandidate {
+  device: Device;
+  deviceId: string;
+  viaCidr: string;
+}
+
+/**
+ * Devices reachable only *through* `toDeviceId` — i.e. things sharing a subnet with one of its
+ * interfaces other than however it was reached. Surfaced as suggested forward targets so a tunnel
+ * actually pivots somewhere, instead of defaulting to the jump host's own loopback.
+ */
+export function findPivotCandidates(toDeviceId: string, nodes: DeviceNode[]): PivotCandidate[] {
+  const buckets = computeSubnetBuckets(nodes);
+  const candidates: PivotCandidate[] = [];
+  const seen = new Set<string>();
+
+  for (const [cidr, members] of buckets) {
+    if (!members.some((m) => m.nodeId === toDeviceId)) continue;
+    for (const member of members) {
+      if (member.nodeId === toDeviceId || seen.has(member.nodeId)) continue;
+      const device = findDevice(nodes, member.nodeId);
+      if (!device) continue;
+      seen.add(member.nodeId);
+      candidates.push({ device, deviceId: member.nodeId, viaCidr: cidr });
+    }
+  }
+  return candidates;
 }
 
 /**
@@ -293,6 +369,9 @@ export function buildTunnelEdges(tunnels: TunnelData[]): TunnelHopEdge[] {
         type: 'tunnelHopEdge',
         source: hop.fromDeviceId,
         target: hop.toDeviceId,
+        sourceHandle: 'tunnel-source',
+        targetHandle: 'tunnel-target',
+        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--bp-purple)' },
         data: {
           tunnelId: tunnel.id,
           hopIndex: index,

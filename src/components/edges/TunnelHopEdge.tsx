@@ -8,6 +8,7 @@ export function TunnelHopEdge({
   targetY,
   sourcePosition,
   targetPosition,
+  markerEnd,
   data,
   selected,
 }: EdgeProps<TunnelHopEdgeType>) {
@@ -32,6 +33,7 @@ export function TunnelHopEdge({
       labelY={labelY}
       labelStyle={{ fill: 'var(--bp-purple-bright)', fontSize: 10 }}
       labelBgStyle={{ fill: 'var(--bp-bg-panel)' }}
+      markerEnd={markerEnd}
       style={{
         stroke: 'var(--bp-purple)',
         strokeWidth: selected ? 2.5 : 1.5,

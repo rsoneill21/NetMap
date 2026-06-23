@@ -16,6 +16,7 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
   const meta = deviceTypeMeta[data.type];
   const Icon = meta.icon;
   const { onStartTunnel } = useDeviceActions();
+  const activeTunnelPorts = data.activeTunnelPorts as number[] | undefined;
 
   return (
     <div className={`device-node${selected ? ' is-selected' : ''}`}>
@@ -65,12 +66,26 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
         <div className="device-node-ports">
           <span className="device-node-ports-label">Ports</span>
           {data.ports.map((port) => (
-            <span key={port} className="port-badge">
+            <span key={port} className={`port-badge${activeTunnelPorts?.includes(port) ? ' is-tunneled' : ''}`} title={activeTunnelPorts?.includes(port) ? 'In use by a tunnel mapping' : undefined}>
               {port}
             </span>
           ))}
         </div>
       )}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="tunnel-target"
+        className="tunnel-node-handle"
+        style={{ top: 'auto', bottom: 6 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="tunnel-source"
+        className="tunnel-node-handle"
+        style={{ top: 'auto', bottom: 6 }}
+      />
     </div>
   );
 }

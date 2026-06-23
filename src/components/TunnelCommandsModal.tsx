@@ -5,6 +5,7 @@ import type { DeviceNode, TunnelData } from '../types';
 interface TunnelCommandsModalProps {
   tunnel: TunnelData;
   nodes: DeviceNode[];
+  onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -13,18 +14,18 @@ function copy(text: string) {
   navigator.clipboard.writeText(text).catch(() => {});
 }
 
-export function TunnelCommandsModal({ tunnel, nodes, onDelete, onClose }: TunnelCommandsModalProps) {
-  const { hopCommands, forwardingCommand, proxychainsLines } = buildTunnelCommandBlock(tunnel, nodes);
+export function TunnelCommandsModal({ tunnel, nodes, onEdit, onDelete, onClose }: TunnelCommandsModalProps) {
+  const { hopCommands, mappingDescriptions, proxychainsLines } = buildTunnelCommandBlock(tunnel, nodes);
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal modal-wide">
-        <h2>Tunnel Commands</h2>
+        <h2>Tunnel Commands{tunnel.label ? ` — ${tunnel.label}` : ''}</h2>
         <p className="modal-help">
           Hypothetical commands for this pivot chain. Nothing here is executed — copy these into your own lab/terminal.
         </p>
 
-        <h3 className="tunnel-section-title">Access chain</h3>
+        <h3 className="tunnel-section-title">Pivot chain</h3>
         <div className="tunnel-command-block">
           {hopCommands.map((hop) => (
             <div key={hop.hopId} className="tunnel-command-row">
@@ -39,16 +40,15 @@ export function TunnelCommandsModal({ tunnel, nodes, onDelete, onClose }: Tunnel
           ))}
         </div>
 
-        {forwardingCommand && (
+        {mappingDescriptions.length > 0 && (
           <>
-            <h3 className="tunnel-section-title">Forwarding command</h3>
+            <h3 className="tunnel-section-title">Port mappings</h3>
             <div className="tunnel-command-block">
-              <div className="tunnel-command-row">
-                <code>{forwardingCommand}</code>
-                <button type="button" className="toolbar-btn" onClick={() => copy(forwardingCommand)} title="Copy command">
-                  <Copy size={14} />
-                </button>
-              </div>
+              {mappingDescriptions.map((desc, i) => (
+                <div key={i} className="tunnel-command-row">
+                  <code>{desc}</code>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -72,6 +72,9 @@ export function TunnelCommandsModal({ tunnel, nodes, onDelete, onClose }: Tunnel
         <div className="modal-actions">
           <button type="button" className="toolbar-btn toolbar-btn-danger" onClick={onDelete}>
             Delete Tunnel
+          </button>
+          <button type="button" className="toolbar-btn" onClick={onEdit}>
+            Edit Tunnel
           </button>
           <button type="button" className="toolbar-btn toolbar-btn-primary" onClick={onClose}>
             Close

@@ -193,6 +193,13 @@
   border: 1px solid var(--bp-bg) !important;
 }
 
+.tunnel-node-handle {
+  width: 7px !important;
+  height: 7px !important;
+  background: var(--bp-purple) !important;
+  border: 1px solid var(--bp-bg) !important;
+}
+
 .device-node-ports {
   display: flex;
   align-items: center;
@@ -217,6 +224,12 @@
   background: var(--bp-cyan-hover);
   border-radius: 3px;
   padding: 1px 5px;
+}
+
+.port-badge.is-tunneled {
+  color: var(--bp-purple-bright);
+  border-color: var(--bp-purple);
+  box-shadow: 0 0 4px var(--bp-purple);
 }
 
 .subnet-group-overlay {

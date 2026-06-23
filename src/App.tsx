@@ -11,7 +11,7 @@ import { TunnelCommandImportModal } from './components/TunnelCommandImportModal'
 import { TunnelCommandsModal } from './components/TunnelCommandsModal';
 import { useNetMapState } from './hooks/useNetMapState';
 import { exportCanvasAsPng, exportCanvasAsSvg } from './lib/exportImage';
-import { buildTunnelEdges } from './lib/tunnel';
+import { buildTunnelEdges, computeActiveTunnelPorts } from './lib/tunnel';
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import { DeviceActionsContext } from './contexts/deviceActionsContextDefinition';
 import type { CanvasEdge, DeviceEdge } from './types';
@@ -25,6 +25,7 @@ function App() {
   const [tunnelWizardOpen, setTunnelWizardOpen] = useState(false);
   const [tunnelCommandImportOpen, setTunnelCommandImportOpen] = useState(false);
   const [tunnelCommandAnchorId, setTunnelCommandAnchorId] = useState<string | null>(null);
+  const [editingTunnelId, setEditingTunnelId] = useState<string | null>(null);
 
   const deviceActions = useMemo(
     () => ({
@@ -78,6 +79,25 @@ function App() {
     [state.tunnels, state.selectedTunnelId],
   );
 
+  const editingTunnel = useMemo(
+    () => state.tunnels.find((t) => t.id === editingTunnelId),
+    [state.tunnels, editingTunnelId],
+  );
+
+  const nodesForCanvas = useMemo(
+    () =>
+      state.nodes.map((n) => ({
+        ...n,
+        data: { ...n.data, activeTunnelPorts: computeActiveTunnelPorts(n.id, state.tunnels, state.nodes) },
+      })),
+    [state.nodes, state.tunnels],
+  );
+
+  function closeTunnelWizard() {
+    setTunnelWizardOpen(false);
+    setEditingTunnelId(null);
+  }
+
   const handleSelect = useCallback(
     (id: string | null) => {
       state.setSelectedId(id);
@@ -121,7 +141,10 @@ function App() {
             onExportJson={state.exportJson}
             onImportJson={state.importJson}
             onRelinkSubnets={state.relinkSubnets}
-            onNewTunnel={() => setTunnelWizardOpen(true)}
+            onNewTunnel={() => {
+              setEditingTunnelId(null);
+              setTunnelWizardOpen(true);
+            }}
             onNewTunnelFromCommands={() => {
               setTunnelCommandAnchorId(null);
               setTunnelCommandImportOpen(true);
@@ -132,7 +155,7 @@ function App() {
           <div className="app-body">
             <DevicePalette onAddDevice={(type) => state.addDevice(type)} />
             <Canvas
-              nodes={state.nodes}
+              nodes={nodesForCanvas}
               edges={canvasEdges}
               onNodesChange={state.onNodesChange}
               onEdgesChange={handleCanvasEdgesChange}
@@ -158,8 +181,15 @@ function App() {
             nodes={state.nodes}
             existingTunnels={state.tunnels}
             physicalEdges={state.edges}
-            onCreate={state.addTunnel}
-            onClose={() => setTunnelWizardOpen(false)}
+            editingTunnel={editingTunnel}
+            onSubmit={(tunnel) => {
+              if (editingTunnelId) {
+                state.updateTunnel(editingTunnelId, () => tunnel);
+              } else {
+                state.addTunnel(tunnel);
+              }
+            }}
+            onClose={closeTunnelWizard}
           />
         )}
         {tunnelCommandImportOpen && (
@@ -177,6 +207,11 @@ function App() {
           <TunnelCommandsModal
             tunnel={selectedTunnel}
             nodes={state.nodes}
+            onEdit={() => {
+              setEditingTunnelId(selectedTunnel.id);
+              state.setSelectedTunnelId(null);
+              setTunnelWizardOpen(true);
+            }}
             onDelete={() => state.deleteTunnel(selectedTunnel.id)}
             onClose={() => state.setSelectedTunnelId(null)}
           />
