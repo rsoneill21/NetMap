@@ -65,7 +65,7 @@ function App() {
     [state.edges, state.selectedId],
   );
 
-  const tunnelEdges = useMemo(() => buildTunnelEdges(state.tunnels), [state.tunnels]);
+  const tunnelEdges = useMemo(() => buildTunnelEdges(state.tunnels, state.nodes), [state.tunnels, state.nodes]);
   const canvasEdges: CanvasEdge[] = useMemo(() => {
     const highlightedTunnelEdges: CanvasEdge[] = tunnelEdges.map((e) => ({
       ...e,
@@ -117,7 +117,7 @@ function App() {
   const handleCanvasEdgesChange = useCallback(
     (changes: EdgeChange<CanvasEdge>[]) => {
       const physicalChanges = changes.filter(
-        (c) => !('id' in c) || !c.id.startsWith('tunnel-edge-'),
+        (c) => !('id' in c) || !c.id.startsWith('tunnel-'),
       ) as EdgeChange<DeviceEdge>[];
       state.onEdgesChange(physicalChanges);
     },

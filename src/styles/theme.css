@@ -232,6 +232,19 @@
   box-shadow: 0 0 4px var(--bp-purple);
 }
 
+.port-badge-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.port-handle {
+  width: 6px !important;
+  height: 6px !important;
+  background: var(--bp-purple) !important;
+  border: 1px solid var(--bp-bg) !important;
+  bottom: -3px !important;
+}
+
 .subnet-group-overlay {
   position: absolute;
   top: 0;

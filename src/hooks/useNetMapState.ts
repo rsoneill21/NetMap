@@ -20,6 +20,7 @@ import {
 } from '../lib/storage';
 import { saveShare, loadShare, codeFromUrl, setUrlCode } from '../lib/share';
 import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr } from '../lib/subnet';
+import { tunnelPortAssignments } from '../lib/tunnel';
 import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface, TunnelData } from '../types';
 
 function findInterface(nodes: DeviceNode[], nodeId: string | null | undefined, handleId: string | null | undefined): NetInterface | null {
@@ -142,14 +143,39 @@ export function useNetMapState() {
     setSelectedId(null);
   }, [selectedId]);
 
-  const addTunnel = useCallback((tunnel: TunnelData) => {
-    setTunnels((prev) => [...prev, tunnel]);
-    setSelectedTunnelId(tunnel.id);
+  const registerTunnelPorts = useCallback((tunnel: TunnelData) => {
+    setNodes((prevNodes) => {
+      const assignments = tunnelPortAssignments(tunnel, prevNodes);
+      if (assignments.length === 0) return prevNodes;
+      let changed = false;
+      const next = prevNodes.map((n) => {
+        const ports = assignments.filter((a) => a.deviceId === n.id).map((a) => a.port);
+        if (ports.length === 0) return n;
+        const existing = n.data.ports ?? [];
+        const merged = [...new Set([...existing, ...ports])];
+        if (merged.length === existing.length) return n;
+        changed = true;
+        return { ...n, data: { ...n.data, ports: merged } };
+      });
+      return changed ? next : prevNodes;
+    });
   }, []);
 
+  const addTunnel = useCallback((tunnel: TunnelData) => {
+    setTunnels((prev) => [...prev, tunnel]);
+    registerTunnelPorts(tunnel);
+    setSelectedTunnelId(tunnel.id);
+  }, [registerTunnelPorts]);
+
   const updateTunnel = useCallback((tunnelId: string, updater: (tunnel: TunnelData) => TunnelData) => {
-    setTunnels((prev) => prev.map((t) => (t.id === tunnelId ? updater(t) : t)));
-  }, []);
+    setTunnels((prev) => {
+      const current = prev.find((t) => t.id === tunnelId);
+      if (!current) return prev;
+      const next = updater(current);
+      registerTunnelPorts(next);
+      return prev.map((t) => (t.id === tunnelId ? next : t));
+    });
+  }, [registerTunnelPorts]);
 
   const deleteTunnel = useCallback((tunnelId: string) => {
     setTunnels((prev) => prev.filter((t) => t.id !== tunnelId));

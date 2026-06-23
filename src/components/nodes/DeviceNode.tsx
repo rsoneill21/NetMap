@@ -1,4 +1,5 @@
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { useEffect } from 'react';
+import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react';
 import { Cable } from 'lucide-react';
 import { deviceTypeMeta } from '../../lib/device';
 import { formatIpAddress } from '../../lib/cidr';
@@ -12,11 +13,18 @@ function statusDotClass(status: string): string {
   return 'status-dot unknown';
 }
 
-export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
+export function DeviceNode({ id, data, selected }: NodeProps<DeviceNodeType>) {
   const meta = deviceTypeMeta[data.type];
   const Icon = meta.icon;
   const { onStartTunnel } = useDeviceActions();
   const activeTunnelPorts = data.activeTunnelPorts as number[] | undefined;
+
+  // Port handles are added/removed dynamically as tunnels register ports — React Flow only
+  // measures a node's handles once on mount, so it must be told explicitly when they change.
+  const updateNodeInternals = useUpdateNodeInternals();
+  useEffect(() => {
+    updateNodeInternals(id);
+  }, [id, data.ports, updateNodeInternals]);
 
   return (
     <div className={`device-node${selected ? ' is-selected' : ''}`}>
@@ -66,8 +74,22 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
         <div className="device-node-ports">
           <span className="device-node-ports-label">Ports</span>
           {data.ports.map((port) => (
-            <span key={port} className={`port-badge${activeTunnelPorts?.includes(port) ? ' is-tunneled' : ''}`} title={activeTunnelPorts?.includes(port) ? 'In use by a tunnel mapping' : undefined}>
-              {port}
+            <span key={port} className="port-badge-wrap">
+              <Handle
+                type="target"
+                position={Position.Bottom}
+                id={`port-${port}-target`}
+                className="port-handle"
+              />
+              <Handle
+                type="source"
+                position={Position.Bottom}
+                id={`port-${port}-source`}
+                className="port-handle"
+              />
+              <span className={`port-badge${activeTunnelPorts?.includes(port) ? ' is-tunneled' : ''}`} title={activeTunnelPorts?.includes(port) ? 'In use by a tunnel mapping' : undefined}>
+                {port}
+              </span>
             </span>
           ))}
         </div>

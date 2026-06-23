@@ -108,24 +108,68 @@ export function describeMapping(mapping: PortMapping, fromLabel: string, toLabel
 }
 
 /**
- * Ports on `deviceId` currently referenced as a forward target by any tunnel's local/remote mapping —
- * matched by device label, the same convention `portsForMapping`/pivot suggestions already use.
+ * Ports on `deviceId` currently referenced as a forward target by any tunnel's local/remote mapping,
+ * or that a mapping listens on this device — matched by device label, the same convention
+ * `portsForMapping`/pivot suggestions already use.
  */
 export function computeActiveTunnelPorts(deviceId: string, tunnels: TunnelData[], nodes: DeviceNode[]): number[] {
-  const device = findDevice(nodes, deviceId);
-  if (!device) return [];
   const ports = new Set<number>();
   for (const tunnel of tunnels) {
-    for (const mapping of tunnel.portMappings) {
-      if (mapping.type === 'dynamic') continue;
-      const targetLabel = mapping.remoteHost?.toLowerCase();
-      const targetPort = mapping.type === 'local' ? mapping.remotePort : mapping.localPort;
-      if (targetLabel && targetLabel === device.label.toLowerCase() && targetPort != null) {
-        ports.add(targetPort);
-      }
+    for (const { deviceId: id, port } of tunnelPortAssignments(tunnel, nodes)) {
+      if (id === deviceId) ports.add(port);
     }
   }
   return [...ports];
+}
+
+/**
+ * Where a mapping's forwarding actually listens — always known directly from the forwarding hop and
+ * mapping type, no canvas lookup needed: `-L` opens on the SSH client (hop's `fromDevice`), `-R`/`-D`
+ * open on the SSH server (hop's `toDevice`) ... except `-D`'s SOCKS listener is on the client too, so
+ * only `-R` flips it to the hop's `toDevice`.
+ */
+function listenAnchor(mapping: PortMapping, forwardingHop: TunnelHop): { deviceId: string; port: number } | null {
+  const deviceId = mapping.type === 'remote' ? forwardingHop.toDeviceId : forwardingHop.fromDeviceId;
+  const port = mapping.type === 'remote' ? mapping.remotePort : mapping.localPort;
+  if (port == null) return null;
+  return { deviceId, port };
+}
+
+/** Resolves a port mapping's actual forwarded target — matched against canvas device labels by `remoteHost`. */
+function resolveMappingTarget(
+  mapping: PortMapping,
+  nodes: DeviceNode[],
+): { deviceId: string; port: number } | null {
+  if (mapping.type === 'dynamic') return null;
+  const targetLabel = mapping.remoteHost?.toLowerCase();
+  const targetPort = mapping.type === 'local' ? mapping.remotePort : mapping.localPort;
+  if (!targetLabel || targetPort == null) return null;
+  const target = nodes.find((n) => n.data.label.toLowerCase() === targetLabel);
+  if (!target) return null;
+  return { deviceId: target.id, port: targetPort };
+}
+
+/**
+ * Every device/port a tunnel's mappings touch — both where each forward listens and where it
+ * actually leads, resolved against the current canvas. Used to auto-register ports on the relevant
+ * devices so they show up as badges without the user having to add them manually, and to anchor
+ * tunnel edges to the real port instead of a generic device handle.
+ */
+export function tunnelPortAssignments(tunnel: TunnelData, nodes: DeviceNode[]): { deviceId: string; port: number }[] {
+  const forwardingHop = tunnel.hops.find((h) => h.id === tunnel.forwardingHopId);
+  if (!forwardingHop) return [];
+  const assignments: { deviceId: string; port: number }[] = [];
+  for (const mapping of tunnel.portMappings) {
+    const listen = listenAnchor(mapping, forwardingHop);
+    if (listen) assignments.push(listen);
+    const target = resolveMappingTarget(mapping, nodes);
+    if (target) assignments.push(target);
+  }
+  return assignments;
+}
+
+export function portHandleId(port: number, role: 'source' | 'target'): string {
+  return `port-${port}-${role}`;
 }
 
 export interface PivotCandidate {
@@ -360,26 +404,85 @@ export function findDynamicPortConflict(
   return null;
 }
 
-export function buildTunnelEdges(tunnels: TunnelData[]): TunnelHopEdge[] {
-  return tunnels.flatMap((tunnel) =>
-    tunnel.hops.map((hop, index) => {
-      const isForwardingHop = hop.id === tunnel.forwardingHopId;
-      return {
-        id: `tunnel-edge-${tunnel.id}-${hop.id}`,
+function mappingForwardLabel(mapping: PortMapping): string {
+  if (mapping.type === 'dynamic') return `D ${mapping.localPort ?? '?'}`;
+  if (mapping.type === 'local') return `L ${mapping.localPort ?? '?'}→${mapping.remotePort ?? '?'}`;
+  return `R ${mapping.remotePort ?? '?'}→${mapping.localPort ?? '?'}`;
+}
+
+/**
+ * One edge per mapping showing where its forward actually leads — anchored at the real listening
+ * port on one end and the real (resolved) destination port on the other whenever both are known,
+ * instead of overloading the hop edge with one mapping's worth of precision.
+ */
+function buildForwardEdges(tunnel: TunnelData, forwardingHop: TunnelHop, nodes: DeviceNode[]): TunnelHopEdge[] {
+  return tunnel.portMappings.flatMap((mapping): TunnelHopEdge[] => {
+    if (mapping.type === 'dynamic') return [];
+    const listen = listenAnchor(mapping, forwardingHop);
+    if (!listen) return [];
+    const target = resolveMappingTarget(mapping, nodes);
+    const fallbackDeviceId = mapping.type === 'remote' ? forwardingHop.fromDeviceId : forwardingHop.toDeviceId;
+    const targetDeviceId = target?.deviceId ?? fallbackDeviceId;
+    if (targetDeviceId === listen.deviceId) return [];
+    const targetHandle = target ? portHandleId(target.port, 'target') : mapping.type === 'remote' ? 'tunnel-source' : 'tunnel-target';
+
+    return [
+      {
+        id: `tunnel-fwd-edge-${tunnel.id}-${mapping.id}`,
         type: 'tunnelHopEdge',
-        source: hop.fromDeviceId,
-        target: hop.toDeviceId,
-        sourceHandle: 'tunnel-source',
-        targetHandle: 'tunnel-target',
-        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--bp-purple)' },
+        source: listen.deviceId,
+        target: targetDeviceId,
+        sourceHandle: portHandleId(listen.port, 'source'),
+        targetHandle,
+        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--bp-purple-bright)' },
         data: {
           tunnelId: tunnel.id,
-          hopIndex: index,
-          protocol: hop.protocol,
-          isForwardingHop,
-          portSummary: isForwardingHop ? portMappingSummary(tunnel.portMappings) : undefined,
+          kind: 'forward',
+          protocol: forwardingHop.protocol,
+          label: mappingForwardLabel(mapping),
         },
-      } satisfies TunnelHopEdge;
-    }),
-  );
+      } satisfies TunnelHopEdge,
+    ];
+  });
+}
+
+/** Fans out edges that share the same device pair (e.g. two tunnels hopping the same two boxes) so they don't render stacked on top of each other. */
+function assignLanes(edges: TunnelHopEdge[]): TunnelHopEdge[] {
+  const seen = new Map<string, number>();
+  return edges.map((edge) => {
+    const key = [edge.source, edge.target].sort().join('|');
+    const lane = seen.get(key) ?? 0;
+    seen.set(key, lane + 1);
+    return { ...edge, data: { ...edge.data!, lane } };
+  });
+}
+
+export function buildTunnelEdges(tunnels: TunnelData[], nodes: DeviceNode[]): TunnelHopEdge[] {
+  const edges = tunnels.flatMap((tunnel) => {
+    const hopEdges = tunnel.hops.map(
+      (hop) =>
+        ({
+          id: `tunnel-edge-${tunnel.id}-${hop.id}`,
+          type: 'tunnelHopEdge',
+          source: hop.fromDeviceId,
+          target: hop.toDeviceId,
+          sourceHandle: 'tunnel-source',
+          targetHandle: 'tunnel-target',
+          markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--bp-purple)' },
+          data: {
+            tunnelId: tunnel.id,
+            kind: 'hop',
+            protocol: hop.protocol,
+            label: hop.protocol,
+          },
+        } satisfies TunnelHopEdge),
+    );
+
+    const forwardingHop = tunnel.hops.find((h) => h.id === tunnel.forwardingHopId);
+    const forwardEdges = forwardingHop ? buildForwardEdges(tunnel, forwardingHop, nodes) : [];
+
+    return [...hopEdges, ...forwardEdges];
+  });
+
+  return assignLanes(edges);
 }

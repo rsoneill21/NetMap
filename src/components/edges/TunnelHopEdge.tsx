@@ -1,6 +1,9 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
 import type { TunnelHopEdge as TunnelHopEdgeType } from '../../types';
 
+const BASE_STEP_OFFSET = 20;
+const LANE_STEP = 16;
+
 export function TunnelHopEdge({
   sourceX,
   sourceY,
@@ -12,6 +15,7 @@ export function TunnelHopEdge({
   data,
   selected,
 }: EdgeProps<TunnelHopEdgeType>) {
+  const lane = data?.lane ?? 0;
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -20,10 +24,11 @@ export function TunnelHopEdge({
     targetY,
     targetPosition,
     borderRadius: 4,
+    offset: BASE_STEP_OFFSET + lane * LANE_STEP,
   });
 
-  const protocol = data?.protocol ?? 'ssh';
-  const label = data?.isForwardingHop && data?.portSummary ? `${protocol} · ${data.portSummary}` : protocol;
+  const isForward = data?.kind === 'forward';
+  const label = data?.label ?? data?.protocol ?? 'ssh';
 
   return (
     <BaseEdge
@@ -31,14 +36,14 @@ export function TunnelHopEdge({
       label={label}
       labelX={labelX}
       labelY={labelY}
-      labelStyle={{ fill: 'var(--bp-purple-bright)', fontSize: 10 }}
+      labelStyle={{ fill: isForward ? 'var(--bp-purple-bright)' : 'var(--bp-text-muted)', fontSize: 10 }}
       labelBgStyle={{ fill: 'var(--bp-bg-panel)' }}
       markerEnd={markerEnd}
       style={{
-        stroke: 'var(--bp-purple)',
-        strokeWidth: selected ? 2.5 : 1.5,
-        strokeDasharray: '6 4',
-        opacity: selected ? 1 : 0.85,
+        stroke: isForward ? 'var(--bp-purple-bright)' : 'var(--bp-purple)',
+        strokeWidth: selected ? 2.5 : isForward ? 1.75 : 1.25,
+        strokeDasharray: isForward ? '5 3' : '2 4',
+        opacity: selected ? 1 : isForward ? 0.9 : 0.55,
       }}
     />
   );

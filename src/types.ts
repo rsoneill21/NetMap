@@ -83,10 +83,13 @@ export interface TunnelData {
 
 export interface TunnelHopEdgeData {
   tunnelId: string;
-  hopIndex: number;
+  /** `hop` = the literal SSH connection a hop represents; `forward` = where a port-forward mapping actually leads. */
+  kind: 'hop' | 'forward';
   protocol: HopProtocol;
-  isForwardingHop: boolean;
-  portSummary?: string;
+  /** Pre-built label text — "ssh" for hop edges, "L 2222→22" style for forward edges. */
+  label: string;
+  /** Lane index among edges sharing the same source/target device pair, used to fan out overlapping tunnels. */
+  lane?: number;
 }
 export type TunnelHopEdgeFlowData = TunnelHopEdgeData & Record<string, unknown>;
 export type TunnelHopEdge = Edge<TunnelHopEdgeFlowData, 'tunnelHopEdge'>;
