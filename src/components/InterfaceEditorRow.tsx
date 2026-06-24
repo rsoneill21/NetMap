@@ -16,6 +16,7 @@ export function InterfaceEditorRow({ iface, onChange, onRemove, onSetManagement 
   const [addressesText, setAddressesText] = useState(() =>
     iface.addresses.map(formatIpAddress).join(', '),
   );
+  const [natText, setNatText] = useState(() => (iface.natAddress ? formatIpAddress(iface.natAddress) : ''));
 
   return (
     <div className={`iface-editor-row${iface.isManagement ? ' is-management' : ''}`}>
@@ -69,6 +70,18 @@ export function InterfaceEditorRow({ iface, onChange, onRemove, onSetManagement 
         value={iface.description}
         placeholder="description"
         onChange={(e) => onChange({ ...iface, description: e.target.value })}
+      />
+      <input
+        className="iface-editor-nat"
+        value={natText}
+        placeholder="NAT address, e.g. 203.0.113.5/32 (set if reached via a router doing NAT)"
+        title="Address this interface is reached at from outside its subnet, via a router performing NAT"
+        onChange={(e) => {
+          setNatText(e.target.value);
+          const token = e.target.value.trim();
+          const parsed = token ? parseCidrToken(token) : null;
+          onChange({ ...iface, natAddress: parsed ?? undefined });
+        }}
       />
     </div>
   );

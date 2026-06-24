@@ -20,6 +20,9 @@ export interface NetInterface {
   status: InterfaceStatus;
   macAddress?: string;
   isManagement?: boolean;
+  /** Address this interface is reached at from outside its own subnet, e.g. the public/translated
+   * side of a NAT performed by a router not otherwise modeled on the canvas. */
+  natAddress?: IpAddress;
 }
 
 export interface Device {
@@ -42,6 +45,7 @@ export interface LinkData {
   targetInterfaceName: string;
   subnetCidr?: string;
   subnetMismatch?: boolean;
+  viaNat?: boolean;
   origin: 'auto' | 'manual';
 }
 export type LinkEdgeData = LinkData & Record<string, unknown>;

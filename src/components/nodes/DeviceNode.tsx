@@ -37,6 +37,11 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
                 ? iface.addresses.map((a) => formatIpAddress(a)).join(', ')
                 : '—'}
             </span>
+            {iface.natAddress && (
+              <span className="iface-nat-badge" title="Reached via NAT">
+                NAT {formatIpAddress(iface.natAddress)}
+              </span>
+            )}
             <Handle
               type="source"
               position={Position.Right}

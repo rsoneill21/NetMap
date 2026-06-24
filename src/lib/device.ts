@@ -34,15 +34,26 @@ export function createInterface(name: string): NetInterface {
   };
 }
 
+function createLoopback(): NetInterface {
+  const iface = createInterface('lo0');
+  iface.description = 'Loopback';
+  iface.status = 'up';
+  iface.addresses = [
+    { address: '127.0.0.1', prefixLength: 32, family: 'ipv4', isLinkLocal: false, isLoopback: true },
+  ];
+  return iface;
+}
+
 function defaultInterfacesFor(type: DeviceType): NetInterface[] {
-  const ifaces =
-    type === 'cloud'
-      ? [createInterface('uplink')]
-      : type === 'switch'
-        ? [createInterface('eth0'), createInterface('eth1')]
-        : [createInterface('eth0')];
-  ifaces[0].isManagement = true;
-  return ifaces;
+  if (type === 'cloud') {
+    const ifaces = [createInterface('uplink')];
+    ifaces[0].isManagement = true;
+    return ifaces;
+  }
+
+  const networkIfaces = type === 'switch' ? [createInterface('eth0'), createInterface('eth1')] : [createInterface('eth0')];
+  networkIfaces[0].isManagement = true;
+  return [createLoopback(), ...networkIfaces];
 }
 
 export function createDevice(type: DeviceType, label?: string): Device {

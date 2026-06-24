@@ -19,7 +19,7 @@ import {
   buildDocument,
 } from '../lib/storage';
 import { saveShare, loadShare, codeFromUrl, setUrlCode } from '../lib/share';
-import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr } from '../lib/subnet';
+import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr, natLinkCidr } from '../lib/subnet';
 import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface } from '../types';
 
 function findInterface(nodes: DeviceNode[], nodeId: string | null | undefined, handleId: string | null | undefined): NetInterface | null {
@@ -80,12 +80,18 @@ export function useNetMapState() {
       const targetIface = findInterface(nodes, connection.target, connection.targetHandle);
       const sharedCidr =
         sourceIface && targetIface ? sharedSubnetCidr(sourceIface, targetIface) : null;
+      const natCidr =
+        !sharedCidr && sourceIface && targetIface ? natLinkCidr(sourceIface, targetIface) : null;
       const hasAddresses = (sourceIface?.addresses.length ?? 0) > 0 && (targetIface?.addresses.length ?? 0) > 0;
-      const subnetMismatch = hasAddresses && !sharedCidr;
+      const subnetMismatch = hasAddresses && !sharedCidr && !natCidr;
 
       if (subnetMismatch) {
         setStatusMessage(
           `Warning: ${sourceIface?.name ?? 'interface'} and ${targetIface?.name ?? 'interface'} are not on the same subnet.`,
+        );
+      } else if (natCidr) {
+        setStatusMessage(
+          `${sourceIface?.name ?? 'interface'} and ${targetIface?.name ?? 'interface'} linked via NAT.`,
         );
       }
 
@@ -99,8 +105,9 @@ export function useNetMapState() {
               targetInterfaceId: connection.targetHandle ?? '',
               sourceInterfaceName: sourceIface?.name ?? '',
               targetInterfaceName: targetIface?.name ?? '',
-              subnetCidr: sharedCidr ?? undefined,
+              subnetCidr: sharedCidr ?? natCidr ?? undefined,
               subnetMismatch,
+              viaNat: Boolean(natCidr),
               origin: 'manual',
             },
           },

@@ -17,6 +17,9 @@
   --bp-green: #4ade80;
   --bp-green-dim: rgba(74, 222, 128, 0.35);
   --bp-green-faint: rgba(74, 222, 128, 0.08);
+  --bp-purple: #c084fc;
+  --bp-purple-dim: rgba(192, 132, 252, 0.35);
+  --bp-purple-faint: rgba(192, 132, 252, 0.08);
   --bp-line-width: 1.25px;
   --bp-text-muted: rgba(125, 211, 252, 0.6);
   --bp-backdrop: rgba(7, 16, 41, 0.55);
@@ -41,6 +44,9 @@
   --bp-green: #16a34a;
   --bp-green-dim: rgba(22, 163, 74, 0.35);
   --bp-green-faint: rgba(22, 163, 74, 0.06);
+  --bp-purple: #9333ea;
+  --bp-purple-dim: rgba(147, 51, 234, 0.35);
+  --bp-purple-faint: rgba(147, 51, 234, 0.06);
   --bp-text-muted: rgba(3, 105, 161, 0.65);
   --bp-backdrop: rgba(15, 23, 42, 0.4);
 }
@@ -154,6 +160,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.iface-nat-badge {
+  font-size: 9px;
+  color: var(--bp-purple);
+  border: 1px solid var(--bp-purple-dim);
+  background: var(--bp-purple-faint);
+  border-radius: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .iface-handle {

@@ -23,19 +23,29 @@ export function DeviceEdge({
   });
 
   const mismatch = data?.subnetMismatch;
+  const viaNat = data?.viaNat;
+  const color = mismatch ? 'var(--bp-amber)' : viaNat ? 'var(--bp-purple)' : 'var(--bp-cyan)';
+  const labelColor = mismatch ? 'var(--bp-amber)' : viaNat ? 'var(--bp-purple)' : 'var(--bp-cyan-bright)';
+  const label = mismatch
+    ? 'subnet mismatch'
+    : viaNat
+      ? `via NAT${data?.subnetCidr ? ` (${data.subnetCidr})` : ''}`
+      : showSubnetLabels
+        ? data?.subnetCidr
+        : undefined;
 
   return (
     <BaseEdge
       path={edgePath}
-      label={mismatch ? 'subnet mismatch' : showSubnetLabels ? data?.subnetCidr : undefined}
+      label={label}
       labelX={labelX}
       labelY={labelY}
-      labelStyle={{ fill: mismatch ? 'var(--bp-amber)' : 'var(--bp-cyan-bright)', fontSize: 10 }}
+      labelStyle={{ fill: labelColor, fontSize: 10 }}
       labelBgStyle={{ fill: 'var(--bp-bg-panel)' }}
       style={{
-        stroke: mismatch ? 'var(--bp-amber)' : 'var(--bp-cyan)',
+        stroke: color,
         strokeWidth: 1.25,
-        strokeDasharray: mismatch ? '4 3' : undefined,
+        strokeDasharray: mismatch || viaNat ? '4 3' : undefined,
       }}
     />
   );
