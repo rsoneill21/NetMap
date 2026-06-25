@@ -38,6 +38,10 @@ export interface Device {
 export type DeviceNodeData = Device & Record<string, unknown>;
 export type DeviceNode = Node<DeviceNodeData, 'deviceNode'>;
 
+export type LinkKind = 'network' | 'tunnel' | 'service';
+export type TunnelKind = 'dynamic-socks' | 'local-forward' | 'remote-forward' | 'direct-ssh' | 'custom';
+export type TunnelStatus = 'planned' | 'active' | 'stale' | 'failed';
+
 export interface LinkData {
   sourceInterfaceId: string;
   targetInterfaceId: string;
@@ -46,6 +50,19 @@ export interface LinkData {
   subnetCidr?: string;
   subnetMismatch?: boolean;
   viaNat?: boolean;
+  linkKind?: LinkKind;
+  label?: string;
+  tunnelKind?: TunnelKind;
+  tunnelStatus?: TunnelStatus;
+  protocol?: string;
+  bindHost?: string;
+  localPort?: number;
+  remoteHost?: string;
+  remotePort?: number;
+  sshUser?: string;
+  sshHost?: string;
+  sshPort?: number;
+  command?: string;
   origin: 'auto' | 'manual';
 }
 export type LinkEdgeData = LinkData & Record<string, unknown>;

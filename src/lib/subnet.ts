@@ -42,6 +42,7 @@ function makeAutoEdge(a: AddressRef, b: AddressRef, cidr: string, viaNat = false
       targetInterfaceName: b.interfaceName,
       subnetCidr: cidr,
       viaNat,
+      linkKind: 'network',
       origin: 'auto',
     },
   };

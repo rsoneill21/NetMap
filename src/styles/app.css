@@ -484,6 +484,37 @@
   color: var(--bp-green);
 }
 
+.iface-move-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.iface-move-btn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--bp-cyan-dim);
+  border-radius: 3px;
+  color: var(--bp-cyan-bright);
+  padding: 0;
+  cursor: pointer;
+}
+
+.iface-move-btn:hover:not(:disabled) {
+  border-color: var(--bp-cyan);
+  background: var(--bp-cyan-hover);
+}
+
+.iface-move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .iface-management-caption {
   display: flex;
   align-items: center;
@@ -629,4 +660,180 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.inspector-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.tunnel-fields {
+  border: 1px solid var(--bp-amber);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.tunnel-console {
+  flex-shrink: 0;
+  border-top: 1px solid var(--bp-cyan-dim);
+  background: var(--bp-bg-panel);
+  color: var(--bp-white);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.tunnel-console-tab {
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--bp-bg-panel-light);
+  border: none;
+  border-bottom: 1px solid var(--bp-cyan-dim);
+  color: var(--bp-cyan-bright);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tunnel-console-tab:hover {
+  background: var(--bp-cyan-hover);
+}
+
+.tunnel-console-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.tunnel-console-controls {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+
+.tunnel-console-context {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--bp-cyan-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tunnel-console-context strong {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  color: var(--bp-green);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tunnel-console-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bp-cyan-dim);
+}
+
+.tunnel-console-controls select,
+.tunnel-console-command-row input {
+  background: var(--bp-bg);
+  border: 1px solid var(--bp-cyan-dim);
+  color: var(--bp-white);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.tunnel-console-controls select {
+  height: 28px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+
+.tunnel-console-command-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--bp-cyan-dim);
+  border-radius: 4px;
+  background: var(--bp-bg);
+  padding: 6px 8px;
+}
+
+.tunnel-console-prompt {
+  color: var(--bp-green);
+  flex-shrink: 0;
+}
+
+.tunnel-console-command-row input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+
+.tunnel-console-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bp-amber);
+  font-size: 11px;
+  min-height: 18px;
+}
+
+@media (max-width: 900px) {
+  .tunnel-console-controls {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  
+.tunnel-console-context {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--bp-cyan-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tunnel-console-context strong {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  color: var(--bp-green);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tunnel-console-controls label {
+    flex: 1 1 180px;
+  }
 }

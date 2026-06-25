@@ -4,6 +4,7 @@ import { Toolbar } from './components/Toolbar';
 import { DevicePalette } from './components/DevicePalette';
 import { Canvas } from './components/Canvas';
 import { InspectorPanel } from './components/InspectorPanel';
+import { TunnelConsole } from './components/TunnelConsole';
 import { ImportModal } from './components/ImportModal';
 import { ConfirmModal } from './components/ConfirmModal';
 import { useNetMapState } from './hooks/useNetMapState';
@@ -74,10 +75,17 @@ function App() {
               selectedNode={selectedNode}
               selectedEdge={selectedEdge}
               onUpdateDevice={state.updateDevice}
+              onUpdateEdge={state.updateEdge}
               onDeleteSelected={state.deleteSelected}
               onClose={() => state.setSelectedId(null)}
             />
           </div>
+          <TunnelConsole
+            nodes={state.nodes}
+            selectedNode={selectedNode}
+            onCreateTunnel={state.addTunnelEdge}
+            onStatus={state.setStatusMessage}
+          />
         </div>
         {importOpen && (
           <ImportModal onImport={state.importParsedText} onClose={() => setImportOpen(false)} />

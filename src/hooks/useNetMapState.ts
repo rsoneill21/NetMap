@@ -20,13 +20,28 @@ import {
 } from '../lib/storage';
 import { saveShare, loadShare, codeFromUrl, setUrlCode } from '../lib/share';
 import { computeAutoLinks, mergeAutoLinks, sharedSubnetCidr, natLinkCidr } from '../lib/subnet';
-import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, NetInterface } from '../types';
+import type { Device, DeviceEdge, DeviceNode, DeviceNodeData, DeviceType, LinkData, LinkEdgeData, NetInterface } from '../types';
 
 function findInterface(nodes: DeviceNode[], nodeId: string | null | undefined, handleId: string | null | undefined): NetInterface | null {
-  if (!nodeId || !handleId) return null;
+  if (!nodeId || !handleId || handleId.startsWith('port-')) return null;
   const interfaceId = handleId.replace(/-(source|target)$/, '');
   const node = nodes.find((n) => n.id === nodeId);
   return node?.data.interfaces.find((iface) => iface.id === interfaceId) ?? null;
+}
+
+function portFromHandle(handleId: string | null | undefined): number | null {
+  if (!handleId?.startsWith('port-')) return null;
+  const port = Number(handleId.replace(/^port-/, '').replace(/-(source|target)$/, ''));
+  return Number.isFinite(port) ? port : null;
+}
+
+function portHandle(port: number | undefined, direction: 'source' | 'target'): string | undefined {
+  return port ? `port-${port}-${direction}` : undefined;
+}
+
+function deviceHasPort(nodes: DeviceNode[], nodeId: string, port: number | undefined): boolean {
+  if (!port) return false;
+  return nodes.some((node) => node.id === nodeId && (node.data.ports ?? []).includes(port));
 }
 
 function deviceToNode(device: Device, position: { x: number; y: number }): DeviceNode {
@@ -78,6 +93,9 @@ export function useNetMapState() {
     (connection: Connection) => {
       const sourceIface = findInterface(nodes, connection.source, connection.sourceHandle);
       const targetIface = findInterface(nodes, connection.target, connection.targetHandle);
+      const sourcePort = portFromHandle(connection.sourceHandle);
+      const targetPort = portFromHandle(connection.targetHandle);
+      const involvesPort = sourcePort != null || targetPort != null;
       const sharedCidr =
         sourceIface && targetIface ? sharedSubnetCidr(sourceIface, targetIface) : null;
       const natCidr =
@@ -103,11 +121,19 @@ export function useNetMapState() {
             data: {
               sourceInterfaceId: connection.sourceHandle ?? '',
               targetInterfaceId: connection.targetHandle ?? '',
-              sourceInterfaceName: sourceIface?.name ?? '',
-              targetInterfaceName: targetIface?.name ?? '',
+              sourceInterfaceName: sourceIface?.name ?? (sourcePort != null ? `tcp/${sourcePort}` : ''),
+              targetInterfaceName: targetIface?.name ?? (targetPort != null ? `tcp/${targetPort}` : ''),
               subnetCidr: sharedCidr ?? natCidr ?? undefined,
-              subnetMismatch,
+              subnetMismatch: involvesPort ? false : subnetMismatch,
               viaNat: Boolean(natCidr),
+              linkKind: involvesPort ? 'service' : 'network',
+              label: involvesPort
+                ? [sourcePort != null ? `tcp/${sourcePort}` : null, targetPort != null ? `tcp/${targetPort}` : null]
+                    .filter(Boolean)
+                    .join(' -> ')
+                : undefined,
+              localPort: sourcePort ?? undefined,
+              remotePort: targetPort ?? undefined,
               origin: 'manual',
             },
           },
@@ -138,6 +164,46 @@ export function useNetMapState() {
       prev.map((n) => (n.id === deviceId ? { ...n, data: updater(n.data) as DeviceNodeData } : n)),
     );
   }, []);
+
+  const updateEdge = useCallback((edgeId: string, updater: (data: LinkData) => LinkData) => {
+    setEdges((prev) =>
+      prev.map((edge) => {
+        if (edge.id !== edgeId) return edge;
+        const current = edge.data as LinkData;
+        return { ...edge, data: updater(current) as LinkEdgeData };
+      }),
+    );
+  }, []);
+
+  const addTunnelEdge = useCallback((sourceId: string, targetId: string, data: Partial<LinkData>) => {
+    const id = `tunnel-${sourceId}-${targetId}-${Date.now()}`;
+    const sourceHandle = deviceHasPort(nodes, sourceId, data.localPort) ? portHandle(data.localPort, 'source') : undefined;
+    const targetHandle = deviceHasPort(nodes, targetId, data.remotePort) ? portHandle(data.remotePort, 'target') : undefined;
+    setEdges((prev) => [
+      ...prev,
+      {
+        id,
+        source: sourceId,
+        target: targetId,
+        sourceHandle,
+        targetHandle,
+        type: 'deviceEdge',
+        data: {
+          sourceInterfaceId: sourceHandle ?? '',
+          targetInterfaceId: targetHandle ?? '',
+          sourceInterfaceName: data.localPort ? `tcp/${data.localPort}` : '',
+          targetInterfaceName: data.remotePort ? `tcp/${data.remotePort}` : '',
+          linkKind: 'tunnel',
+          tunnelStatus: 'planned',
+          protocol: 'ssh',
+          origin: 'manual',
+          ...data,
+        },
+      },
+    ]);
+    setSelectedId(id);
+    return id;
+  }, [nodes]);
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
@@ -291,6 +357,8 @@ export function useNetMapState() {
     onConnect,
     addDevice,
     updateDevice,
+    updateEdge,
+    addTunnelEdge,
     deleteSelected,
     relinkSubnets,
     importParsedText,

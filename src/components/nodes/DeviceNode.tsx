@@ -1,4 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Cable } from 'lucide-react';
 import { deviceTypeMeta } from '../../lib/device';
 import { formatIpAddress } from '../../lib/cidr';
 import type { DeviceNode as DeviceNodeType } from '../../types';
@@ -54,11 +55,27 @@ export function DeviceNode({ data, selected }: NodeProps<DeviceNodeType>) {
       </div>
       {data.ports != null && data.ports.length > 0 && (
         <div className="device-node-ports">
-          <span className="device-node-ports-label">Ports</span>
+          <div className="device-node-ports-label">
+            <Cable size={11} />
+            Ports
+          </div>
           {data.ports.map((port) => (
-            <span key={port} className="port-badge">
-              {port}
-            </span>
+            <div key={port} className="device-node-port-row">
+              <Handle
+                type="target"
+                position={Position.Left}
+                id={`port-${port}-target`}
+                className="port-handle"
+              />
+              <span className="port-name">tcp/{port}</span>
+              <span className="port-role">service</span>
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={`port-${port}-source`}
+                className="port-handle"
+              />
+            </div>
           ))}
         </div>
       )}

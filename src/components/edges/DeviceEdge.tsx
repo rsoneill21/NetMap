@@ -24,15 +24,35 @@ export function DeviceEdge({
 
   const mismatch = data?.subnetMismatch;
   const viaNat = data?.viaNat;
-  const color = mismatch ? 'var(--bp-amber)' : viaNat ? 'var(--bp-purple)' : 'var(--bp-cyan)';
-  const labelColor = mismatch ? 'var(--bp-amber)' : viaNat ? 'var(--bp-purple)' : 'var(--bp-cyan-bright)';
+  const linkKind = data?.linkKind ?? 'network';
+  const isTunnel = linkKind === 'tunnel';
+  const isService = linkKind === 'service';
+  const color = mismatch
+    ? 'var(--bp-amber)'
+    : isTunnel
+      ? 'var(--bp-amber)'
+      : isService
+        ? 'var(--bp-green)'
+        : viaNat
+          ? 'var(--bp-purple)'
+          : 'var(--bp-cyan)';
+  const labelColor = color;
+  const tunnelLabel = data?.label
+    ?? (data?.tunnelKind === 'dynamic-socks' && data.localPort ? `SOCKS :${data.localPort}` : undefined)
+    ?? (data?.localPort && data?.remoteHost && data?.remotePort
+      ? `-L ${data.localPort} -> ${data.remoteHost}:${data.remotePort}`
+      : undefined);
   const label = mismatch
     ? 'subnet mismatch'
-    : viaNat
-      ? `via NAT${data?.subnetCidr ? ` (${data.subnetCidr})` : ''}`
-      : showSubnetLabels
-        ? data?.subnetCidr
-        : undefined;
+    : isTunnel
+      ? tunnelLabel ?? 'tunnel'
+      : isService
+        ? data?.label ?? 'service'
+        : viaNat
+          ? `via NAT${data?.subnetCidr ? ` (${data.subnetCidr})` : ''}`
+          : showSubnetLabels
+            ? data?.subnetCidr
+            : undefined;
 
   return (
     <BaseEdge
@@ -44,8 +64,8 @@ export function DeviceEdge({
       labelBgStyle={{ fill: 'var(--bp-bg-panel)' }}
       style={{
         stroke: color,
-        strokeWidth: 1.25,
-        strokeDasharray: mismatch || viaNat ? '4 3' : undefined,
+        strokeWidth: isTunnel ? 2 : 1.25,
+        strokeDasharray: isTunnel ? '7 4' : mismatch || viaNat || isService ? '4 3' : undefined,
       }}
     />
   );

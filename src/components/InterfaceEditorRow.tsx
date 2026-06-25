@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Star, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Star, Trash2 } from 'lucide-react';
 import { parseCidrToken, formatIpAddress } from '../lib/cidr';
 import type { InterfaceStatus, NetInterface } from '../types';
 
@@ -8,11 +8,24 @@ interface InterfaceEditorRowProps {
   onChange: (next: NetInterface) => void;
   onRemove: () => void;
   onSetManagement: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
 }
 
 const STATUS_OPTIONS: InterfaceStatus[] = ['up', 'down', 'admin-down', 'unknown'];
 
-export function InterfaceEditorRow({ iface, onChange, onRemove, onSetManagement }: InterfaceEditorRowProps) {
+export function InterfaceEditorRow({
+  iface,
+  onChange,
+  onRemove,
+  onSetManagement,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+}: InterfaceEditorRowProps) {
   const [addressesText, setAddressesText] = useState(() =>
     iface.addresses.map(formatIpAddress).join(', '),
   );
@@ -29,6 +42,26 @@ export function InterfaceEditorRow({ iface, onChange, onRemove, onSetManagement 
         >
           <Star size={14} fill={iface.isManagement ? 'currentColor' : 'none'} />
         </button>
+        <div className="iface-move-controls" aria-label="Reorder interface">
+          <button
+            type="button"
+            className="iface-move-btn"
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            title="Move interface up"
+          >
+            <ArrowUp size={12} />
+          </button>
+          <button
+            type="button"
+            className="iface-move-btn"
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            title="Move interface down"
+          >
+            <ArrowDown size={12} />
+          </button>
+        </div>
         <input
           className="iface-editor-name"
           value={iface.name}
